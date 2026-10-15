@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="robots"
+          content="noindex, nofollow">
+
+    <meta name="description"
+          content="Help centre and frequently asked questions for the Employee Management and Payroll System.">
+
+    <title>FAQ &amp; Help | Employee Management &amp; Payroll System</title>
+
+    <!-- UNIVERSAL STYLESHEETS -->
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/filter.css">
+
+    <!-- EXTERNAL JAVASCRIPT -->
+
+    <script src="js/script.js" defer></script>
+    <script src="js/faq.js" defer></script>
+
+</head>
+
+<body class="app-layout"
+      data-page="faq"
+      data-module="faq">
+
+    <!-- MOBILE SIDEBAR BACKDROP -->
+
+    <div class="sidebar-backdrop"
+         id="sidebarBackdrop"
+         aria-hidden="true">
+    </div>
+
+    <!-- UNIVERSAL SIDEBAR -->
+
+    <aside class="sidebar"
+           id="appSidebar">
+
+        <div class="sidebar-header">
+
+            <a href="dashboard.html"
+               class="sidebar-brand">
+
+                <div class="brand-logo">EM</div>
+
+                <div class="brand-text">
+
+                    <h2>Employee Management</h2>
+
+                    <span>Payroll System</span>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <nav class="sidebar-body"
+             aria-label="Main Navigation">
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Main Menu
+                </div>
+
+                <a href="dashboard.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">01</span>
+
+                    <span class="nav-label">Dashboard</span>
+
+                </a>
+
+                <a href="employees.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">02</span>
+
+                    <span class="nav-label">Employees</span>
+
+                </a>
+
+                <a href="attendance.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">03</span>
+
+                    <span class="nav-label">Attendance</span>
+
+                </a>
+
+                <a href="leave.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">04</span>
+
+                    <span class="nav-label">Leave Management</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Finance
+                </div>
+
+                <a href="payroll.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">05</span>
+
+                    <span class="nav-label">Payroll</span>
+
+                </a>
+
+                <a href="payslips.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">06</span>
+
+                    <span class="nav-label">Payslips</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Management
+                </div>
+
+                <a href="reports.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">07</span>
+
+                    <span class="nav-label">
+                        Reports &amp; Insights
+                    </span>
+
+                </a>
+
+                <a href="settings.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">08</span>
+
+                    <span class="nav-label">
+                        Advanced Settings
+                    </span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Support
+                </div>
+
+                <a href="faq.html"
+                   class="nav-link active"
+                   aria-current="page">
+
+                    <span class="nav-icon">09</span>
+
+                    <span class="nav-label">
+                        FAQ &amp; Help
+                    </span>
+
+                </a>
+
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <button type="button"
+                    class="btn btn-secondary btn-block"
+                    id="logoutButton">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN APPLICATION -->
+
+    <div class="main-wrapper">
+
+        <!-- UNIVERSAL HEADER -->
+
+        <header class="top-header">
+
+            <div class="header-left">
+
+                <button type="button"
+                        class="header-action menu-toggle"
+                        id="menuToggle"
+                        aria-label="Toggle navigation"
+                        aria-controls="appSidebar"
+                        aria-expanded="false">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+
+                    </svg>
+
+                </button>
+
+                <h1 class="header-title">
+                    FAQ &amp; Help
+                </h1>
+
+            </div>
+
+            <div class="header-right">
+
+                <button type="button"
+                        class="header-action"
+                        id="notificationButton"
+                        aria-label="Notifications">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+
+                        <path d="M10 21h4"></path>
+
+                    </svg>
+
+                </button>
+
+                <div class="user-menu">
+
+                    <div class="user-avatar"
+                         id="headerUserAvatar"
+                         aria-hidden="true">
+                    </div>
+
+                    <div class="user-details">
+
+                        <strong id="headerUserName"></strong>
+
+                        <small id="headerUserRole"></small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- MAIN CONTENT -->
+
+        <main class="main-content">
+
+            <div class="container-fluid">
+
+                <!-- PAGE HEADING -->
+
+                <div class="page-heading">
+
+                    <div>
+
+                        <h1>Help Centre</h1>
+
+                        <p>
+                            Find guidance on system features,
+                            company procedures and frequently
+                            asked questions.
+                        </p>
+
+                    </div>
+
+                    <div class="page-actions">
+
+                        <button type="button"
+                                class="btn btn-secondary"
+                                id="refreshFAQ">
+
+                            Refresh
+
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-primary"
+                                id="manageFAQButton"
+                                hidden>
+
+                            Manage FAQ
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- HELP SEARCH -->
+
+                <section class="card mb-2"
+                         aria-labelledby="faqSearchTitle">
+
+                    <div class="card-body">
+
+                        <h2 id="faqSearchTitle"
+                            class="mb-2">
+
+                            How can we help?
+
+                        </h2>
+
+                        <form id="faqSearchForm"
+                              role="search">
+
+                            <div class="form-group">
+
+                                <label for="faqSearch"
+                                       class="form-label">
+
+                                    Search Help Articles
+
+                                </label>
+
+                                <input type="search"
+                                       id="faqSearch"
+                                       name="search"
+                                       class="form-control"
+                                       placeholder="Search questions, topics or keywords"
+                                       autocomplete="off">
+
+                                <p class="form-help">
+                                    Search results will include only
+                                    articles available to your account.
+                                </p>
+
+                            </div>
+
+                            <div class="form-actions">
+
+                                <button type="submit"
+                                        class="btn btn-primary"
+                                        id="submitFAQSearch">
+
+                                    Search
+
+                                </button>
+
+                                <button type="reset"
+                                        class="btn btn-secondary"
+                                        id="clearFAQSearch">
+
+                                    Clear
+
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                </section>
+
+                <!-- FAQ CATEGORIES -->
+
+                <section class="card mb-2"
+                         aria-labelledby="faqCategoriesTitle">
+
+                    <div class="card-header">
+
+                        <h3 id="faqCategoriesTitle">
+                            Help Categories
+                        </h3>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="d-flex flex-wrap gap-2"
+                             id="faqCategoryFilters"
+                             role="group"
+                             aria-label="Filter FAQ by Category">
+
+                            <!--
+                                Category buttons will be generated
+                                from published Firebase categories.
+
+                                The All Categories filter will also
+                                be generated by faq.js.
+                            -->
+
+                        </div>
+
+                        <div class="empty-state"
+                             id="faqCategoriesEmpty"
+                             hidden>
+
+                            <h3>No Categories Available</h3>
+
+                            <p>
+                                Help categories have not been
+                                published yet.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- FAQ STATUS -->
+
+                <section class="card mb-2"
+                         id="faqLoading"
+                         role="status"
+                         aria-live="polite">
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <div class="loading-spinner"></div>
+
+                            <h3 class="mt-2">
+                                Loading Help Articles
+                            </h3>
+
+                            <p>
+                                Retrieving available guidance
+                                and frequently asked questions.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- ERROR STATE -->
+
+                <section class="card mb-2"
+                         id="faqError"
+                         role="alert"
+                         hidden>
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <h3>Unable to Load Help Articles</h3>
+
+                            <p id="faqErrorMessage">
+                                Help information could not be retrieved.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary mt-2"
+                                    id="retryFAQ">
+
+                                Try Again
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- FAQ DIRECTORY -->
+
+                <section class="card mb-2"
+                         id="faqDirectory"
+                         aria-labelledby="faqDirectoryTitle"
+                         hidden>
+
+                    <div class="card-header">
+
+                        <h3 id="faqDirectoryTitle">
+                            Frequently Asked Questions
+                        </h3>
+
+                        <span class="badge badge-primary"
+                              id="faqResultCount">
+
+                            0 Articles
+
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- ACTIVE FILTER INFORMATION -->
+
+                        <div class="d-flex justify-between align-center flex-wrap gap-2 mb-2">
+
+                            <p class="text-muted"
+                               id="faqActiveFilter"
+                               role="status"
+                               aria-live="polite"></p>
+
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    id="resetFAQFilters"
+                                    hidden>
+
+                                Reset Filters
+
+                            </button>
+
+                        </div>
+
+                        <!-- DYNAMIC FAQ ARTICLES -->
+
+                        <div id="faqList">
+
+                            <!--
+                                faq.js will render accessible FAQ
+                                items from authorised Firebase data.
+
+                                Each article will include:
+                                - Unique article ID
+                                - Question
+                                - Expandable answer
+                                - Category
+                                - Helpful feedback controls
+
+                                All retrieved content must be
+                                safely rendered.
+                            -->
+
+                        </div>
+
+                        <!-- EMPTY STATE -->
+
+                        <div class="empty-state"
+                             id="faqEmpty"
+                             hidden>
+
+                            <h3>No Matching Questions</h3>
+
+                            <p>
+                                No published help articles match
+                                the selected search or category.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary mt-2"
+                                    id="showAllFAQ">
+
+                                Show All Available Questions
+
+                            </button>
+
+                        </div>
+
+                        <!-- PAGINATION -->
+
+                        <div class="table-pagination"
+                             id="faqPagination"
+                             hidden>
+
+                            <span id="faqPaginationInfo">
+                                Showing 0 of 0 articles
+                            </span>
+
+                            <div class="pagination-actions">
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="faqPrevPage"
+                                        disabled>
+
+                                    Previous
+
+                                </button>
+
+                                <span id="faqCurrentPage">
+                                    Page 1
+                                </span>
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="faqNextPage"
+                                        disabled>
+
+                                    Next
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- SUPPORT CONTACT -->
+
+                <section class="card mb-2"
+                         id="faqSupportSection"
+                         aria-labelledby="faqSupportTitle"
+                         hidden>
+
+                    <div class="card-header">
+
+                        <h3 id="faqSupportTitle">
+                            Need Additional Assistance?
+                        </h3>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <p class="mb-2"
+                           id="faqSupportDescription"></p>
+
+                        <div class="grid grid-2">
+
+                            <div id="faqSupportContact">
+
+                                <!--
+                                    Authorised organisation support
+                                    details loaded from Firebase.
+                                -->
+
+                            </div>
+
+                            <div>
+
+                                <h3 class="mb-2">
+                                    Submit a Support Request
+                                </h3>
+
+                                <p class="text-muted mb-2">
+                                    Contact your organisation's
+                                    designated support team.
+                                </p>
+
+                                <button type="button"
+                                        class="btn btn-primary"
+                                        id="openSupportRequest"
+                                        hidden>
+
+                                    Submit Request
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </main>
+
+        <!-- UNIVERSAL FOOTER -->
+
+        <footer class="app-footer">
+
+            <span>
+                Employee Management &amp; Payroll System
+            </span>
+
+            <span>
+                Designed and Developed by Yadav Web Technologies
+            </span>
+
+        </footer>
+
+    </div>
+
+    <!-- FAQ ARTICLE DETAILS OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="faqArticleBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="faqArticleTitle">
+
+            <div class="modal-header">
+
+                <h2 id="faqArticleTitle">
+                    Help Article
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeFAQArticle"
+                        aria-label="Close help article">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <!-- ARTICLE LOADING -->
+
+                <div class="empty-state"
+                     id="faqArticleLoading"
+                     role="status"
+                     hidden>
+
+                    <div class="loading-spinner"></div>
+
+                    <p class="mt-2">
+                        Loading article...
+                    </p>
+
+                </div>
+
+                <!-- ARTICLE ERROR -->
+
+                <div class="form-error"
+                     id="faqArticleError"
+                     role="alert"
+                     hidden>
+                </div>
+
+                <!-- ARTICLE CONTENT -->
+
+                <article id="faqArticleContent"
+                         hidden>
+
+                    <p class="text-muted"
+                       id="faqArticleCategory"></p>
+
+                    <div id="faqArticleAnswer">
+
+                        <!-- Published, safely rendered answer -->
+
+                    </div>
+
+                    <div class="mt-2">
+
+                        <p class="mb-2">
+                            Was this article helpful?
+                        </p>
+
+                        <div class="d-flex flex-wrap gap-2"
+                             id="faqArticleFeedback">
+
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    id="faqHelpfulYes"
+                                    data-feedback="helpful">
+
+                                Yes
+
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    id="faqHelpfulNo"
+                                    data-feedback="not_helpful">
+
+                                No
+
+                            </button>
+
+                        </div>
+
+                        <p class="form-help mt-2"
+                           id="faqFeedbackStatus"
+                           role="status"
+                           aria-live="polite"></p>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="faqArticleCloseButton">
+
+                    Close
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- SUPPORT REQUEST OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="supportRequestBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="supportRequestTitle">
+
+            <div class="modal-header">
+
+                <h2 id="supportRequestTitle">
+                    Submit Support Request
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeSupportRequest"
+                        aria-label="Close support request form">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <form id="supportRequestForm">
+
+                <div class="modal-body">
+
+                    <div class="form-group">
+
+                        <label for="supportCategory"
+                               class="form-label">
+
+                            Support Category
+
+                        </label>
+
+                        <select id="supportCategory"
+                                name="category"
+                                class="form-control"
+                                required>
+
+                            <option value=""
+                                    selected
+                                    disabled>
+
+                                Select Category
+
+                            </option>
+
+                            <!-- Configured support categories -->
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="supportSubject"
+                               class="form-label">
+
+                            Subject
+
+                        </label>
+
+                        <input type="text"
+                               id="supportSubject"
+                               name="subject"
+                               class="form-control"
+                               maxlength="150"
+                               required>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="supportDescription"
+                               class="form-label">
+
+                            Describe Your Issue
+
+                        </label>
+
+                        <textarea id="supportDescription"
+                                  name="description"
+                                  class="form-control"
+                                  maxlength="3000"
+                                  placeholder="Describe the issue you are experiencing"
+                                  required></textarea>
+
+                        <p class="form-help">
+                            Never include passwords, private keys
+                            or authentication tokens in support requests.
+                        </p>
+
+                    </div>
+
+                    <div class="form-error"
+                         id="supportRequestError"
+                         role="alert"
+                         hidden>
+                    </div>
+
+                    <p id="supportRequestStatus"
+                       role="status"
+                       aria-live="polite"
+                       hidden>
+                    </p>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="cancelSupportRequest">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="submitSupportRequest">
+
+                        Submit Request
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL CONFIRMATION DIALOG -->
+
+    <div class="modal-backdrop"
+         id="confirmBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="confirmTitle"
+                 aria-describedby="confirmMessage">
+
+            <div class="modal-body confirm-dialog">
+
+                <h2 class="confirm-title"
+                    id="confirmTitle">
+
+                    Confirm Action
+
+                </h2>
+
+                <p class="confirm-message"
+                   id="confirmMessage">
+
+                    Are you sure you want to continue?
+
+                </p>
+
+                <div class="confirm-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="confirmCancel">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmProceed">
+
+                        Confirm
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL NOTIFICATIONS -->
+
+    <div class="toast-container"
+         id="toastContainer"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</body>
+</html>
