@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>Leave Management | Employee Management & Payroll System</title>
+
+    <!-- Universal Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/filter.css">
+
+    <!-- External Scripts -->
+    <script src="js/script.js" defer></script>
+    <script src="js/leave.js" defer></script>
+
+</head>
+
+<body class="app-layout"
+      data-page="leave"
+      data-module="leave">
+
+    <!-- MOBILE BACKDROP -->
+
+    <div class="sidebar-backdrop"
+         id="sidebarBackdrop"
+         aria-hidden="true">
+    </div>
+
+    <!-- UNIVERSAL SIDEBAR -->
+
+    <aside class="sidebar" id="appSidebar">
+
+        <div class="sidebar-header">
+
+            <a href="dashboard.html" class="sidebar-brand">
+
+                <div class="brand-logo">EM</div>
+
+                <div class="brand-text">
+                    <h2>Employee Management</h2>
+                    <span>Payroll System</span>
+                </div>
+
+            </a>
+
+        </div>
+
+        <nav class="sidebar-body" aria-label="Main Navigation">
+
+            <div class="nav-section">
+
+                <div class="nav-title">Main Menu</div>
+
+                <a href="dashboard.html" class="nav-link">
+                    <span class="nav-icon">01</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+
+                <a href="employees.html" class="nav-link">
+                    <span class="nav-icon">02</span>
+                    <span class="nav-label">Employees</span>
+                </a>
+
+                <a href="attendance.html" class="nav-link">
+                    <span class="nav-icon">03</span>
+                    <span class="nav-label">Attendance</span>
+                </a>
+
+                <a href="leave.html"
+                   class="nav-link active"
+                   aria-current="page">
+
+                    <span class="nav-icon">04</span>
+                    <span class="nav-label">Leave Management</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Finance</div>
+
+                <a href="payroll.html" class="nav-link">
+                    <span class="nav-icon">05</span>
+                    <span class="nav-label">Payroll</span>
+                </a>
+
+                <a href="payslips.html" class="nav-link">
+                    <span class="nav-icon">06</span>
+                    <span class="nav-label">Payslips</span>
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Management</div>
+
+                <a href="reports.html" class="nav-link">
+                    <span class="nav-icon">07</span>
+                    <span class="nav-label">Reports &amp; Insights</span>
+                </a>
+
+                <a href="settings.html" class="nav-link">
+                    <span class="nav-icon">08</span>
+                    <span class="nav-label">Advanced Settings</span>
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Support</div>
+
+                <a href="faq.html" class="nav-link">
+                    <span class="nav-icon">09</span>
+                    <span class="nav-label">FAQ &amp; Help</span>
+                </a>
+
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <button type="button"
+                    class="btn btn-secondary btn-block"
+                    id="logoutButton">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN APPLICATION -->
+
+    <div class="main-wrapper">
+
+        <!-- UNIVERSAL HEADER -->
+
+        <header class="top-header">
+
+            <div class="header-left">
+
+                <button type="button"
+                        class="header-action menu-toggle"
+                        id="menuToggle"
+                        aria-label="Toggle navigation"
+                        aria-controls="appSidebar"
+                        aria-expanded="false">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+
+                    </svg>
+
+                </button>
+
+                <h1 class="header-title">Leave Management</h1>
+
+            </div>
+
+            <div class="header-right">
+
+                <button type="button"
+                        class="header-action"
+                        id="notificationButton"
+                        aria-label="Notifications">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                        <path d="M10 21h4"></path>
+
+                    </svg>
+
+                </button>
+
+                <div class="user-menu">
+
+                    <div class="user-avatar"
+                         id="headerUserAvatar"
+                         aria-hidden="true">
+                    </div>
+
+                    <div class="user-details">
+
+                        <strong id="headerUserName"></strong>
+
+                        <small id="headerUserRole"></small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- MAIN CONTENT -->
+
+        <main class="main-content">
+
+            <div class="container-fluid">
+
+                <!-- PAGE HEADING -->
+
+                <div class="page-heading">
+
+                    <div>
+
+                        <h1>Leave Management</h1>
+
+                        <p>
+                            Manage employee leave applications,
+                            approvals and leave balances.
+                        </p>
+
+                    </div>
+
+                    <div class="page-actions">
+
+                        <button type="button"
+                                class="btn btn-secondary"
+                                id="exportLeave">
+
+                            Export Records
+
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-primary"
+                                id="addLeaveButton">
+
+                            New Leave Request
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- LEAVE STATISTICS -->
+
+                <section class="grid grid-4 mb-2"
+                         aria-label="Leave Statistics">
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Total Applications
+                            </span>
+
+                            <span class="badge badge-primary">
+                                Applications
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value" id="leaveTotal">--</div>
+
+                        <p class="stat-description">
+                            Applications in the selected period
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Pending Requests
+                            </span>
+
+                            <span class="badge badge-warning">
+                                Pending
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value" id="leavePending">--</div>
+
+                        <p class="stat-description">
+                            Awaiting authorised review
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Approved Requests
+                            </span>
+
+                            <span class="badge badge-success">
+                                Approved
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value" id="leaveApproved">--</div>
+
+                        <p class="stat-description">
+                            Approved leave applications
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Rejected Requests
+                            </span>
+
+                            <span class="badge badge-danger">
+                                Rejected
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value" id="leaveRejected">--</div>
+
+                        <p class="stat-description">
+                            Rejected leave applications
+                        </p>
+
+                    </article>
+
+                </section>
+
+                <!-- LEAVE BALANCE SUMMARY -->
+
+                <section class="card mb-2"
+                         aria-labelledby="leaveBalanceTitle">
+
+                    <div class="card-header">
+
+                        <h3 id="leaveBalanceTitle">
+                            Leave Balance Overview
+                        </h3>
+
+                        <span class="badge badge-primary">
+                            Current Leave Cycle
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div id="leaveBalanceLoading"
+                             class="empty-state"
+                             role="status"
+                             hidden>
+
+                            <div class="loading-spinner"></div>
+
+                            <p class="mt-2">
+                                Loading leave balances...
+                            </p>
+
+                        </div>
+
+                        <div id="leaveBalanceError"
+                             class="form-error"
+                             role="alert"
+                             hidden>
+                        </div>
+
+                        <div class="grid grid-3"
+                             id="leaveBalanceContainer">
+
+                            <!-- Authorised Firebase leave balances -->
+
+                        </div>
+
+                        <div class="empty-state"
+                             id="leaveBalanceEmpty">
+
+                            <h3>No Leave Balance Available</h3>
+
+                            <p>
+                                Configured leave entitlements and
+                                balances will appear here.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- LEAVE APPLICATION DIRECTORY -->
+
+                <section class="card"
+                         aria-labelledby="leaveListTitle">
+
+                    <div class="card-header">
+
+                        <h3 id="leaveListTitle">
+                            Leave Applications
+                        </h3>
+
+                        <span class="badge badge-primary"
+                              id="leaveRecordCount">
+
+                            0 Records
+
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- SEARCH AND FILTERS -->
+
+                        <form id="leaveFilterForm"
+                              class="filter-bar"
+                              role="search">
+
+                            <div class="filter-search">
+
+                                <label for="leaveSearch"
+                                       class="form-label">
+
+                                    Search Applications
+
+                                </label>
+
+                                <input type="search"
+                                       id="leaveSearch"
+                                       name="search"
+                                       class="form-control"
+                                       placeholder="Search employee or application ID"
+                                       autocomplete="off">
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="leaveTypeFilter"
+                                       class="form-label">
+
+                                    Leave Type
+
+                                </label>
+
+                                <select id="leaveTypeFilter"
+                                        name="leaveType"
+                                        class="form-control">
+
+                                    <option value="">
+                                        All Leave Types
+                                    </option>
+
+                                    <!-- Types loaded from settings -->
+
+                                </select>
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="leaveStatusFilter"
+                                       class="form-label">
+
+                                    Status
+
+                                </label>
+
+                                <select id="leaveStatusFilter"
+                                        name="status"
+                                        class="form-control">
+
+                                    <option value="">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                    <option value="cancelled">Cancelled</option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="leaveFromFilter"
+                                       class="form-label">
+
+                                    From Date
+
+                                </label>
+
+                                <input type="date"
+                                       id="leaveFromFilter"
+                                       name="fromDate"
+                                       class="form-control">
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="leaveToFilter"
+                                       class="form-label">
+
+                                    To Date
+
+                                </label>
+
+                                <input type="date"
+                                       id="leaveToFilter"
+                                       name="toDate"
+                                       class="form-control">
+
+                            </div>
+
+                            <div class="filter-actions">
+
+                                <button type="submit"
+                                        class="btn btn-primary"
+                                        id="applyLeaveFilters">
+
+                                    Apply
+
+                                </button>
+
+                                <button type="reset"
+                                        class="btn btn-secondary"
+                                        id="resetLeaveFilters">
+
+                                    Reset
+
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                        <!-- LOADING STATE -->
+
+                        <div class="empty-state"
+                             id="leaveLoading"
+                             role="status"
+                             aria-live="polite"
+                             hidden>
+
+                            <div class="loading-spinner"></div>
+
+                            <p class="mt-2">
+                                Loading leave applications...
+                            </p>
+
+                        </div>
+
+                        <!-- ERROR STATE -->
+
+                        <div class="empty-state"
+                             id="leaveError"
+                             role="alert"
+                             hidden>
+
+                            <h3>Unable to Load Applications</h3>
+
+                            <p id="leaveErrorMessage">
+                                Leave records could not be retrieved.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary mt-2"
+                                    id="retryLeave">
+
+                                Try Again
+
+                            </button>
+
+                        </div>
+
+                        <!-- RESPONSIVE TABLE -->
+
+                        <div class="table-responsive"
+                             id="leaveTableContainer">
+
+                            <table class="data-table"
+                                   id="leaveTable">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th scope="col">Application ID</th>
+                                        <th scope="col">Employee</th>
+                                        <th scope="col">Leave Type</th>
+                                        <th scope="col">From Date</th>
+                                        <th scope="col">To Date</th>
+                                        <th scope="col">Duration</th>
+                                        <th scope="col">Applied On</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Actions</th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody id="leaveTableBody">
+
+                                    <tr id="leaveEmptyRow">
+
+                                        <td colspan="9">
+
+                                            <div class="empty-state">
+
+                                                <h3>No Leave Applications</h3>
+
+                                                <p>
+                                                    No applications are available
+                                                    for the selected filters.
+                                                </p>
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                        <!-- PAGINATION -->
+
+                        <div class="table-pagination"
+                             id="leavePagination">
+
+                            <span id="leavePaginationInfo">
+                                Showing 0 of 0 records
+                            </span>
+
+                            <div class="pagination-actions">
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="leavePrevPage"
+                                        disabled>
+
+                                    Previous
+
+                                </button>
+
+                                <span id="leaveCurrentPage">
+                                    Page 1
+                                </span>
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="leaveNextPage"
+                                        disabled>
+
+                                    Next
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </main>
+
+        <!-- UNIVERSAL FOOTER -->
+
+        <footer class="app-footer">
+
+            <span>
+                Employee Management &amp; Payroll System
+            </span>
+
+            <span>
+                Designed and Developed by Yadav Web Technologies
+            </span>
+
+        </footer>
+
+    </div>
+
+    <!-- ADD / EDIT LEAVE APPLICATION -->
+
+    <div class="modal-backdrop"
+         id="leaveFormBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="leaveFormTitle">
+
+            <div class="modal-header">
+
+                <h2 id="leaveFormTitle">
+                    New Leave Application
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeLeaveForm"
+                        aria-label="Close leave application">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <form id="leaveForm">
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="leaveRecordId"
+                           name="recordId">
+
+                    <h3 class="mb-2">
+                        Application Information
+                    </h3>
+
+                    <div class="grid grid-2">
+
+                        <div class="form-group">
+
+                            <label for="leaveEmployee"
+                                   class="form-label">
+
+                                Employee
+
+                            </label>
+
+                            <select id="leaveEmployee"
+                                    name="employeeId"
+                                    class="form-control"
+                                    required>
+
+                                <option value="" selected disabled>
+                                    Select Employee
+                                </option>
+
+                                <!-- Authorised employees from Firebase -->
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="leaveType"
+                                   class="form-label">
+
+                                Leave Type
+
+                            </label>
+
+                            <select id="leaveType"
+                                    name="leaveType"
+                                    class="form-control"
+                                    required>
+
+                                <option value="" selected disabled>
+                                    Select Leave Type
+                                </option>
+
+                                <!-- Configured types from Firebase -->
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="leaveStartDate"
+                                   class="form-label">
+
+                                Start Date
+
+                            </label>
+
+                            <input type="date"
+                                   id="leaveStartDate"
+                                   name="startDate"
+                                   class="form-control"
+                                   required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="leaveEndDate"
+                                   class="form-label">
+
+                                End Date
+
+                            </label>
+
+                            <input type="date"
+                                   id="leaveEndDate"
+                                   name="endDate"
+                                   class="form-control"
+                                   required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="leaveDurationType"
+                                   class="form-label">
+
+                                Duration Type
+
+                            </label>
+
+                            <select id="leaveDurationType"
+                                    name="durationType"
+                                    class="form-control"
+                                    required>
+
+                                <option value="full_day">Full Day</option>
+                                <option value="first_half">First Half</option>
+                                <option value="second_half">Second Half</option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="leaveCalculatedDays"
+                                   class="form-label">
+
+                                Calculated Leave Days
+
+                            </label>
+
+                            <input type="text"
+                                   id="leaveCalculatedDays"
+                                   class="form-control"
+                                   placeholder="Calculated automatically"
+                                   readonly>
+
+                            <span class="form-help">
+                                Calculated using configured leave
+                                and holiday policies.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="leaveReason"
+                               class="form-label">
+
+                            Reason for Leave
+
+                        </label>
+
+                        <textarea id="leaveReason"
+                                  name="reason"
+                                  class="form-control"
+                                  maxlength="1000"
+                                  placeholder="Enter reason for leave"
+                                  required></textarea>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="leaveAttachment"
+                               class="form-label">
+
+                            Supporting Document
+
+                        </label>
+
+                        <input type="file"
+                               id="leaveAttachment"
+                               name="attachment"
+                               class="form-control"
+                               accept=".pdf,.jpg,.jpeg,.png">
+
+                        <span class="form-help">
+                            Optional. Accepted formats: PDF, JPG and PNG.
+                        </span>
+
+                    </div>
+
+                    <div id="leaveFormError"
+                         class="form-error"
+                         role="alert"
+                         aria-live="assertive"
+                         hidden>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="cancelLeaveForm">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="submitLeaveButton">
+
+                        Submit Application
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+    <!-- LEAVE DETAILS OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="leaveDetailsBackdrop"
+         hidden>
+
+        <section class="modal modal-xl"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="leaveDetailsTitle">
+
+            <div class="modal-header">
+
+                <h2 id="leaveDetailsTitle">
+                    Leave Application Details
+                </h2>
+
+                <div class="page-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary btn-sm"
+                            id="expandLeaveDetails">
+
+                        Full Page View
+
+                    </button>
+
+                    <button type="button"
+                            class="modal-close"
+                            id="closeLeaveDetails"
+                            aria-label="Close leave details">
+
+                        &times;
+
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="modal-body"
+                 id="leaveDetailsContent">
+
+                <!-- Authorised application details -->
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="leaveDetailsCloseButton">
+
+                    Close
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-danger"
+                        id="rejectLeaveButton"
+                        hidden>
+
+                    Reject
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-success"
+                        id="approveLeaveButton"
+                        hidden>
+
+                    Approve
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- APPROVAL / REJECTION FORM -->
+
+    <div class="modal-backdrop"
+         id="leaveDecisionBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="leaveDecisionTitle">
+
+            <div class="modal-header">
+
+                <h2 id="leaveDecisionTitle">
+                    Review Leave Application
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeLeaveDecision"
+                        aria-label="Close review form">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <form id="leaveDecisionForm">
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="leaveDecisionRecordId"
+                           name="recordId">
+
+                    <input type="hidden"
+                           id="leaveDecisionAction"
+                           name="action">
+
+                    <div class="form-group">
+
+                        <label for="leaveDecisionRemarks"
+                               class="form-label">
+
+                            Review Remarks
+
+                        </label>
+
+                        <textarea id="leaveDecisionRemarks"
+                                  name="remarks"
+                                  class="form-control"
+                                  maxlength="1000"
+                                  placeholder="Enter review remarks"></textarea>
+
+                    </div>
+
+                    <div id="leaveDecisionError"
+                         class="form-error"
+                         role="alert"
+                         aria-live="assertive"
+                         hidden>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="cancelLeaveDecision">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="submitLeaveDecision">
+
+                        Continue
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+    <!-- FULL-PAGE LEAVE DETAILS -->
+
+    <section class="fullpage-view"
+             id="leaveFullpageView"
+             aria-labelledby="leaveFullpageTitle"
+             hidden>
+
+        <header class="fullpage-header">
+
+            <h2 id="leaveFullpageTitle">
+                Leave Application Details
+            </h2>
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    id="exitLeaveFullpage">
+
+                Close Full Page
+
+            </button>
+
+        </header>
+
+        <div class="fullpage-body">
+
+            <div class="fullpage-container"
+                 id="leaveFullpageContent">
+
+                <!-- Authorised Firebase application details -->
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- UNIVERSAL CONFIRMATION DIALOG -->
+
+    <div class="modal-backdrop"
+         id="confirmBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="confirmTitle"
+                 aria-describedby="confirmMessage">
+
+            <div class="modal-body confirm-dialog">
+
+                <h2 class="confirm-title"
+                    id="confirmTitle">
+
+                    Confirm Action
+
+                </h2>
+
+                <p class="confirm-message"
+                   id="confirmMessage">
+
+                    Are you sure you want to continue?
+
+                </p>
+
+                <div class="confirm-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="confirmCancel">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmProceed">
+
+                        Confirm
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL NOTIFICATIONS -->
+
+    <div class="toast-container"
+         id="toastContainer"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</body>
+</html>
