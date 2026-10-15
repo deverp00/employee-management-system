@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>Attendance | Employee Management & Payroll System</title>
+
+    <!-- Universal Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/filter.css">
+
+    <!-- External Scripts -->
+    <script src="js/script.js" defer></script>
+    <script src="js/attendance.js" defer></script>
+
+</head>
+
+<body class="app-layout"
+      data-page="attendance"
+      data-module="attendance">
+
+    <!-- MOBILE SIDEBAR BACKDROP -->
+
+    <div class="sidebar-backdrop"
+         id="sidebarBackdrop"
+         aria-hidden="true">
+    </div>
+
+    <!-- UNIVERSAL SIDEBAR -->
+
+    <aside class="sidebar" id="appSidebar">
+
+        <div class="sidebar-header">
+
+            <a href="dashboard.html" class="sidebar-brand">
+
+                <div class="brand-logo">EM</div>
+
+                <div class="brand-text">
+                    <h2>Employee Management</h2>
+                    <span>Payroll System</span>
+                </div>
+
+            </a>
+
+        </div>
+
+        <nav class="sidebar-body" aria-label="Main Navigation">
+
+            <div class="nav-section">
+
+                <div class="nav-title">Main Menu</div>
+
+                <a href="dashboard.html" class="nav-link">
+                    <span class="nav-icon">01</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+
+                <a href="employees.html" class="nav-link">
+                    <span class="nav-icon">02</span>
+                    <span class="nav-label">Employees</span>
+                </a>
+
+                <a href="attendance.html"
+                   class="nav-link active"
+                   aria-current="page">
+
+                    <span class="nav-icon">03</span>
+                    <span class="nav-label">Attendance</span>
+
+                </a>
+
+                <a href="leave.html" class="nav-link">
+                    <span class="nav-icon">04</span>
+                    <span class="nav-label">Leave Management</span>
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Finance</div>
+
+                <a href="payroll.html" class="nav-link">
+                    <span class="nav-icon">05</span>
+                    <span class="nav-label">Payroll</span>
+                </a>
+
+                <a href="payslips.html" class="nav-link">
+                    <span class="nav-icon">06</span>
+                    <span class="nav-label">Payslips</span>
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Management</div>
+
+                <a href="reports.html" class="nav-link">
+                    <span class="nav-icon">07</span>
+                    <span class="nav-label">Reports & Insights</span>
+                </a>
+
+                <a href="settings.html" class="nav-link">
+                    <span class="nav-icon">08</span>
+                    <span class="nav-label">Advanced Settings</span>
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Support</div>
+
+                <a href="faq.html" class="nav-link">
+                    <span class="nav-icon">09</span>
+                    <span class="nav-label">FAQ & Help</span>
+                </a>
+
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <button type="button"
+                    class="btn btn-secondary btn-block"
+                    id="logoutButton">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN APPLICATION -->
+
+    <div class="main-wrapper">
+
+        <!-- UNIVERSAL HEADER -->
+
+        <header class="top-header">
+
+            <div class="header-left">
+
+                <button type="button"
+                        class="header-action menu-toggle"
+                        id="menuToggle"
+                        aria-label="Toggle navigation"
+                        aria-controls="appSidebar"
+                        aria-expanded="false">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+
+                    </svg>
+
+                </button>
+
+                <h1 class="header-title">Attendance</h1>
+
+            </div>
+
+            <div class="header-right">
+
+                <button type="button"
+                        class="header-action"
+                        id="notificationButton"
+                        aria-label="Notifications">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                        <path d="M10 21h4"></path>
+
+                    </svg>
+
+                </button>
+
+                <div class="user-menu">
+
+                    <div class="user-avatar"
+                         id="headerUserAvatar"
+                         aria-hidden="true">
+                    </div>
+
+                    <div class="user-details">
+
+                        <strong id="headerUserName"></strong>
+
+                        <small id="headerUserRole"></small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- MAIN CONTENT -->
+
+        <main class="main-content">
+
+            <div class="container-fluid">
+
+                <!-- PAGE HEADING -->
+
+                <div class="page-heading">
+
+                    <div>
+
+                        <h1>Attendance Management</h1>
+
+                        <p>
+                            Monitor daily attendance and manage
+                            employee attendance records.
+                        </p>
+
+                    </div>
+
+                    <div class="page-actions">
+
+                        <button type="button"
+                                class="btn btn-secondary"
+                                id="exportAttendance">
+
+                            Export Attendance
+
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-primary"
+                                id="markAttendanceButton">
+
+                            Mark Attendance
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- ATTENDANCE STATISTICS -->
+
+                <section class="grid grid-4 mb-2"
+                         aria-label="Attendance Statistics">
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Total Employees
+                            </span>
+
+                            <span class="badge badge-primary">
+                                Workforce
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="attendanceTotalEmployees">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Active employees
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Present
+                            </span>
+
+                            <span class="badge badge-success">
+                                Present
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="attendancePresent">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Selected date
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Absent
+                            </span>
+
+                            <span class="badge badge-danger">
+                                Absent
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="attendanceAbsent">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Selected date
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                On Leave
+                            </span>
+
+                            <span class="badge badge-warning">
+                                Leave
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="attendanceOnLeave">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Selected date
+                        </p>
+
+                    </article>
+
+                </section>
+
+                <!-- ATTENDANCE DIRECTORY -->
+
+                <section class="card"
+                         aria-labelledby="attendanceListTitle">
+
+                    <div class="card-header">
+
+                        <h3 id="attendanceListTitle">
+                            Attendance Register
+                        </h3>
+
+                        <span class="badge badge-primary"
+                              id="attendanceRecordCount">
+                            0 Records
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- SEARCH AND FILTERS -->
+
+                        <form id="attendanceFilterForm"
+                              class="filter-bar"
+                              role="search">
+
+                            <div class="filter-search">
+
+                                <label for="attendanceSearch"
+                                       class="form-label">
+
+                                    Search Employee
+
+                                </label>
+
+                                <input type="search"
+                                       id="attendanceSearch"
+                                       name="search"
+                                       class="form-control"
+                                       placeholder="Search name or Employee ID"
+                                       autocomplete="off">
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="attendanceDate"
+                                       class="form-label">
+
+                                    Attendance Date
+
+                                </label>
+
+                                <input type="date"
+                                       id="attendanceDate"
+                                       name="date"
+                                       class="form-control"
+                                       required>
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="attendanceDepartment"
+                                       class="form-label">
+
+                                    Department
+
+                                </label>
+
+                                <select id="attendanceDepartment"
+                                        name="department"
+                                        class="form-control">
+
+                                    <option value="">
+                                        All Departments
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="attendanceStatus"
+                                       class="form-label">
+
+                                    Status
+
+                                </label>
+
+                                <select id="attendanceStatus"
+                                        name="status"
+                                        class="form-control">
+
+                                    <option value="">All Status</option>
+                                    <option value="present">Present</option>
+                                    <option value="absent">Absent</option>
+                                    <option value="half_day">Half Day</option>
+                                    <option value="leave">On Leave</option>
+                                    <option value="holiday">Holiday</option>
+                                    <option value="unmarked">Not Marked</option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="filter-actions">
+
+                                <button type="submit"
+                                        class="btn btn-primary"
+                                        id="applyAttendanceFilters">
+
+                                    Apply
+
+                                </button>
+
+                                <button type="reset"
+                                        class="btn btn-secondary"
+                                        id="resetAttendanceFilters">
+
+                                    Reset
+
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                        <!-- DATABASE STATUS -->
+
+                        <div id="attendanceLoading"
+                             class="empty-state"
+                             role="status"
+                             aria-live="polite"
+                             hidden>
+
+                            <div class="loading-spinner"></div>
+
+                            <p class="mt-2">
+                                Loading attendance records...
+                            </p>
+
+                        </div>
+
+                        <div id="attendanceError"
+                             class="empty-state"
+                             role="alert"
+                             hidden>
+
+                            <h3>Unable to Load Attendance</h3>
+
+                            <p id="attendanceErrorMessage">
+                                Attendance records could not be retrieved.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary mt-2"
+                                    id="retryAttendance">
+
+                                Try Again
+
+                            </button>
+
+                        </div>
+
+                        <!-- ATTENDANCE TABLE -->
+
+                        <div class="table-responsive"
+                             id="attendanceTableContainer">
+
+                            <table class="data-table"
+                                   id="attendanceTable">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th scope="col">
+                                            Employee ID
+                                        </th>
+
+                                        <th scope="col">
+                                            Employee
+                                        </th>
+
+                                        <th scope="col">
+                                            Department
+                                        </th>
+
+                                        <th scope="col">
+                                            Date
+                                        </th>
+
+                                        <th scope="col">
+                                            Check In
+                                        </th>
+
+                                        <th scope="col">
+                                            Check Out
+                                        </th>
+
+                                        <th scope="col">
+                                            Status
+                                        </th>
+
+                                        <th scope="col">
+                                            Working Hours
+                                        </th>
+
+                                        <th scope="col">
+                                            Actions
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <!-- Firebase records will populate here -->
+
+                                <tbody id="attendanceTableBody">
+
+                                    <tr id="attendanceEmptyRow">
+
+                                        <td colspan="9">
+
+                                            <div class="empty-state">
+
+                                                <h3>No Attendance Records</h3>
+
+                                                <p>
+                                                    No attendance records
+                                                    are available for the
+                                                    selected filters.
+                                                </p>
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                        <!-- PAGINATION -->
+
+                        <div class="table-pagination"
+                             id="attendancePagination">
+
+                            <span id="attendancePaginationInfo">
+                                Showing 0 of 0 records
+                            </span>
+
+                            <div class="pagination-actions">
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="attendancePrevPage"
+                                        disabled>
+
+                                    Previous
+
+                                </button>
+
+                                <span id="attendanceCurrentPage">
+                                    Page 1
+                                </span>
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="attendanceNextPage"
+                                        disabled>
+
+                                    Next
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </main>
+
+        <!-- UNIVERSAL FOOTER -->
+
+        <footer class="app-footer">
+
+            <span>
+                Employee Management & Payroll System
+            </span>
+
+            <span>
+                Designed and Developed by Yadav Web Technologies
+            </span>
+
+        </footer>
+
+    </div>
+
+    <!-- MARK / EDIT ATTENDANCE OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="attendanceFormBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="attendanceFormTitle">
+
+            <div class="modal-header">
+
+                <h2 id="attendanceFormTitle">
+                    Mark Attendance
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeAttendanceForm"
+                        aria-label="Close attendance form">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <form id="attendanceForm">
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="attendanceRecordId"
+                           name="recordId">
+
+                    <h3 class="mb-2">
+                        Attendance Information
+                    </h3>
+
+                    <div class="grid grid-2">
+
+                        <div class="form-group">
+
+                            <label for="attendanceEmployee"
+                                   class="form-label">
+
+                                Select Employee
+
+                            </label>
+
+                            <select id="attendanceEmployee"
+                                    name="employeeId"
+                                    class="form-control"
+                                    required>
+
+                                <option value="" selected disabled>
+                                    Select Employee
+                                </option>
+
+                                <!-- Loaded from Firebase -->
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="attendanceEntryDate"
+                                   class="form-label">
+
+                                Date
+
+                            </label>
+
+                            <input type="date"
+                                   id="attendanceEntryDate"
+                                   name="attendanceDate"
+                                   class="form-control"
+                                   required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="attendanceEntryStatus"
+                                   class="form-label">
+
+                                Attendance Status
+
+                            </label>
+
+                            <select id="attendanceEntryStatus"
+                                    name="status"
+                                    class="form-control"
+                                    required>
+
+                                <option value="" selected disabled>
+                                    Select Status
+                                </option>
+
+                                <option value="present">Present</option>
+                                <option value="absent">Absent</option>
+                                <option value="half_day">Half Day</option>
+                                <option value="leave">On Leave</option>
+                                <option value="holiday">Holiday</option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="attendanceCheckIn"
+                                   class="form-label">
+
+                                Check In
+
+                            </label>
+
+                            <input type="time"
+                                   id="attendanceCheckIn"
+                                   name="checkIn"
+                                   class="form-control">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="attendanceCheckOut"
+                                   class="form-label">
+
+                                Check Out
+
+                            </label>
+
+                            <input type="time"
+                                   id="attendanceCheckOut"
+                                   name="checkOut"
+                                   class="form-control">
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="attendanceOvertime"
+                                   class="form-label">
+
+                                Approved Overtime (Hours)
+
+                            </label>
+
+                            <input type="number"
+                                   id="attendanceOvertime"
+                                   name="overtime"
+                                   class="form-control"
+                                   min="0"
+                                   max="24"
+                                   step="0.25"
+                                   value="0">
+
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="attendanceRemarks"
+                               class="form-label">
+
+                            Remarks
+
+                        </label>
+
+                        <textarea id="attendanceRemarks"
+                                  name="remarks"
+                                  class="form-control"
+                                  maxlength="500"
+                                  placeholder="Optional attendance remarks"></textarea>
+
+                    </div>
+
+                    <div id="attendanceFormError"
+                         class="form-error"
+                         role="alert"
+                         aria-live="assertive"
+                         hidden>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="cancelAttendanceForm">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="saveAttendanceButton">
+
+                        Save Attendance
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+    <!-- ATTENDANCE DETAILS OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="attendanceDetailsBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="attendanceDetailsTitle">
+
+            <div class="modal-header">
+
+                <h2 id="attendanceDetailsTitle">
+                    Attendance Details
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeAttendanceDetails"
+                        aria-label="Close attendance details">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <div class="modal-body"
+                 id="attendanceDetailsContent">
+
+                <!-- Authorised record details load here -->
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="attendanceDetailsCloseButton">
+
+                    Close
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="editAttendanceButton">
+
+                    Edit Attendance
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL CONFIRMATION DIALOG -->
+
+    <div class="modal-backdrop"
+         id="confirmBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="confirmTitle"
+                 aria-describedby="confirmMessage">
+
+            <div class="modal-body confirm-dialog">
+
+                <h2 class="confirm-title"
+                    id="confirmTitle">
+
+                    Confirm Action
+
+                </h2>
+
+                <p class="confirm-message"
+                   id="confirmMessage">
+
+                    Are you sure you want to continue?
+
+                </p>
+
+                <div class="confirm-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="confirmCancel">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmProceed">
+
+                        Confirm
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL NOTIFICATION CONTAINER -->
+
+    <div class="toast-container"
+         id="toastContainer"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</body>
+</html>
