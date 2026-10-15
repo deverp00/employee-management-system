@@ -1,24 +1,47 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-    <meta name="description"
-          content="Employee Management and Payroll System - Secure Employee, HR and Administrator Login.">
+    <meta
+        name="description"
+        content="Secure login for the Employee Management and Payroll System."
+    >
 
     <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
 
     <title>Login | Employee Management & Payroll System</title>
 
-    <!-- Universal Stylesheet -->
+    <!-- Universal Styles -->
     <link rel="stylesheet" href="css/style.css">
 
-    <!-- Login JavaScript -->
+    <!--
+        Application Loading Order
+
+        1. Public runtime configuration
+        2. Firebase authentication controller
+        3. Shared Firebase service bridge
+        4. Universal interface controller
+
+        runtime-config.js will be created during
+        the next integration step.
+
+        This file must never contain private keys,
+        service-account credentials or backend secrets.
+    -->
+
+    <script src="js/runtime-config.js" defer></script>
     <script src="js/auth.js" defer></script>
+    <script src="js/firebase-config.js" defer></script>
+    <script src="js/script.js" defer></script>
 
 </head>
 
@@ -26,13 +49,21 @@
 
     <main class="login-container">
 
-        <section class="login-card" aria-labelledby="login-title">
+        <section
+            class="login-card"
+            aria-labelledby="login-title"
+        >
 
-            <!-- Branding -->
+            <!-- =====================================
+                 BRANDING
+            ====================================== -->
 
             <header class="login-brand">
 
-                <div class="brand-logo" aria-hidden="true">
+                <div
+                    class="brand-logo"
+                    aria-hidden="true"
+                >
                     EM
                 </div>
 
@@ -41,20 +72,31 @@
                 </h1>
 
                 <p>
-                    Payroll & Workforce Management System
+                    Payroll &amp; Workforce Management System
                 </p>
 
             </header>
 
-            <!-- Authentication Form -->
 
-            <form id="loginForm" autocomplete="on">
+            <!-- =====================================
+                 AUTHENTICATION FORM
+            ====================================== -->
 
-                <!-- User Role -->
+            <form
+                id="loginForm"
+                method="post"
+                autocomplete="on"
+                aria-describedby="loginSecurityNote"
+            >
+
+                <!-- Account Role -->
 
                 <div class="form-group">
 
-                    <label for="loginRole" class="form-label">
+                    <label
+                        for="loginRole"
+                        class="form-label"
+                    >
                         Login As
                     </label>
 
@@ -62,10 +104,15 @@
                         id="loginRole"
                         name="role"
                         class="form-control"
+                        autocomplete="off"
                         required
                     >
 
-                        <option value="" selected disabled>
+                        <option
+                            value=""
+                            selected
+                            disabled
+                        >
                             Select User Type
                         </option>
 
@@ -85,11 +132,15 @@
 
                 </div>
 
+
                 <!-- Email Address -->
 
                 <div class="form-group">
 
-                    <label for="loginEmail" class="form-label">
+                    <label
+                        for="loginEmail"
+                        class="form-label"
+                    >
                         Email Address
                     </label>
 
@@ -100,17 +151,23 @@
                         class="form-control"
                         placeholder="Enter your registered email"
                         autocomplete="username"
+                        inputmode="email"
                         maxlength="254"
+                        spellcheck="false"
                         required
                     >
 
                 </div>
 
+
                 <!-- Password -->
 
                 <div class="form-group">
 
-                    <label for="loginPassword" class="form-label">
+                    <label
+                        for="loginPassword"
+                        class="form-label"
+                    >
                         Password
                     </label>
 
@@ -125,12 +182,13 @@
                     >
 
                     <span class="form-help">
-                        Enter your account password to continue.
+                        Enter your registered account credentials.
                     </span>
 
                 </div>
 
-                <!-- Show Password -->
+
+                <!-- Password Visibility -->
 
                 <div class="form-group">
 
@@ -139,21 +197,28 @@
                         <input
                             type="checkbox"
                             id="showPassword"
+                            name="showPassword"
                         >
 
-                        <span>Show Password</span>
+                        <span>
+                            Show Password
+                        </span>
 
                     </label>
 
                 </div>
 
-                <!-- Login Feedback -->
+
+                <!-- =====================================
+                     AUTHENTICATION FEEDBACK
+                ====================================== -->
 
                 <div
                     id="loginError"
                     class="form-error"
                     role="alert"
                     aria-live="assertive"
+                    aria-atomic="true"
                     hidden
                 ></div>
 
@@ -162,26 +227,45 @@
                     class="form-help"
                     role="status"
                     aria-live="polite"
+                    aria-atomic="true"
                     hidden
                 ></div>
 
-                <!-- Submit Button -->
+
+                <!-- Submit -->
 
                 <button
                     type="submit"
                     id="loginButton"
                     class="btn btn-primary btn-lg btn-block"
                 >
+
                     <span id="loginButtonText">
                         Login
                     </span>
+
                 </button>
+
+
+                <!-- Security Information -->
+
+                <p
+                    id="loginSecurityNote"
+                    class="form-help"
+                >
+                    Access is restricted to registered and
+                    authorised accounts. Your assigned role
+                    will be verified after authentication.
+                </p>
 
             </form>
 
         </section>
 
-        <!-- Login Footer -->
+
+        <!-- =========================================
+             FOOTER
+        ========================================== -->
 
         <footer class="login-footer">
 
@@ -190,7 +274,7 @@
             </p>
 
             <p class="mt-1">
-                Employee Management & Payroll System
+                Employee Management &amp; Payroll System
             </p>
 
             <p class="mt-1">
