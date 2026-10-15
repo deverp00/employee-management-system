@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="description"
+          content="Employee Management and Payroll System - Secure Employee, HR and Administrator Login.">
+
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>Login | Employee Management & Payroll System</title>
+
+    <!-- Universal Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Login JavaScript -->
+    <script src="js/auth.js" defer></script>
+
+</head>
+
+<body class="login-page" data-page="login">
+
+    <main class="login-container">
+
+        <section class="login-card" aria-labelledby="login-title">
+
+            <!-- Branding -->
+
+            <header class="login-brand">
+
+                <div class="brand-logo" aria-hidden="true">
+                    EM
+                </div>
+
+                <h1 id="login-title">
+                    Employee Management
+                </h1>
+
+                <p>
+                    Payroll & Workforce Management System
+                </p>
+
+            </header>
+
+            <!-- Authentication Form -->
+
+            <form id="loginForm" autocomplete="on">
+
+                <!-- User Role -->
+
+                <div class="form-group">
+
+                    <label for="loginRole" class="form-label">
+                        Login As
+                    </label>
+
+                    <select
+                        id="loginRole"
+                        name="role"
+                        class="form-control"
+                        required
+                    >
+
+                        <option value="" selected disabled>
+                            Select User Type
+                        </option>
+
+                        <option value="super_admin">
+                            Super Admin
+                        </option>
+
+                        <option value="hr_admin">
+                            HR / Admin
+                        </option>
+
+                        <option value="employee">
+                            Employee
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <!-- Email Address -->
+
+                <div class="form-group">
+
+                    <label for="loginEmail" class="form-label">
+                        Email Address
+                    </label>
+
+                    <input
+                        type="email"
+                        id="loginEmail"
+                        name="email"
+                        class="form-control"
+                        placeholder="Enter your registered email"
+                        autocomplete="username"
+                        maxlength="254"
+                        required
+                    >
+
+                </div>
+
+                <!-- Password -->
+
+                <div class="form-group">
+
+                    <label for="loginPassword" class="form-label">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="loginPassword"
+                        name="password"
+                        class="form-control"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+
+                    <span class="form-help">
+                        Enter your account password to continue.
+                    </span>
+
+                </div>
+
+                <!-- Show Password -->
+
+                <div class="form-group">
+
+                    <label class="checkbox-group">
+
+                        <input
+                            type="checkbox"
+                            id="showPassword"
+                        >
+
+                        <span>Show Password</span>
+
+                    </label>
+
+                </div>
+
+                <!-- Login Feedback -->
+
+                <div
+                    id="loginError"
+                    class="form-error"
+                    role="alert"
+                    aria-live="assertive"
+                    hidden
+                ></div>
+
+                <div
+                    id="loginStatus"
+                    class="form-help"
+                    role="status"
+                    aria-live="polite"
+                    hidden
+                ></div>
+
+                <!-- Submit Button -->
+
+                <button
+                    type="submit"
+                    id="loginButton"
+                    class="btn btn-primary btn-lg btn-block"
+                >
+                    <span id="loginButtonText">
+                        Login
+                    </span>
+                </button>
+
+            </form>
+
+        </section>
+
+        <!-- Login Footer -->
+
+        <footer class="login-footer">
+
+            <p>
+                Authorised Access Only
+            </p>
+
+            <p class="mt-1">
+                Employee Management & Payroll System
+            </p>
+
+            <p class="mt-1">
+                Designed and Developed by Yadav Web Technologies
+            </p>
+
+        </footer>
+
+    </main>
+
+</body>
+
+</html>
