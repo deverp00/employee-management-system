@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="robots"
+          content="noindex, nofollow">
+
+    <meta name="description"
+          content="Employee Management and Payroll Reports and Insights.">
+
+    <title>Reports &amp; Insights | Employee Management &amp; Payroll System</title>
+
+    <!-- UNIVERSAL STYLESHEETS -->
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/filter.css">
+
+    <!-- EXTERNAL JAVASCRIPT -->
+
+    <script src="js/script.js" defer></script>
+    <script src="js/reports.js" defer></script>
+
+</head>
+
+<body class="app-layout"
+      data-page="reports"
+      data-module="reports">
+
+    <!-- MOBILE SIDEBAR BACKDROP -->
+
+    <div class="sidebar-backdrop"
+         id="sidebarBackdrop"
+         aria-hidden="true">
+    </div>
+
+    <!-- UNIVERSAL SIDEBAR -->
+
+    <aside class="sidebar"
+           id="appSidebar">
+
+        <div class="sidebar-header">
+
+            <a href="dashboard.html"
+               class="sidebar-brand">
+
+                <div class="brand-logo">EM</div>
+
+                <div class="brand-text">
+
+                    <h2>Employee Management</h2>
+
+                    <span>Payroll System</span>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <nav class="sidebar-body"
+             aria-label="Main Navigation">
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Main Menu
+                </div>
+
+                <a href="dashboard.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">01</span>
+
+                    <span class="nav-label">Dashboard</span>
+
+                </a>
+
+                <a href="employees.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">02</span>
+
+                    <span class="nav-label">Employees</span>
+
+                </a>
+
+                <a href="attendance.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">03</span>
+
+                    <span class="nav-label">Attendance</span>
+
+                </a>
+
+                <a href="leave.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">04</span>
+
+                    <span class="nav-label">Leave Management</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Finance
+                </div>
+
+                <a href="payroll.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">05</span>
+
+                    <span class="nav-label">Payroll</span>
+
+                </a>
+
+                <a href="payslips.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">06</span>
+
+                    <span class="nav-label">Payslips</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Management
+                </div>
+
+                <a href="reports.html"
+                   class="nav-link active"
+                   aria-current="page">
+
+                    <span class="nav-icon">07</span>
+
+                    <span class="nav-label">
+                        Reports &amp; Insights
+                    </span>
+
+                </a>
+
+                <a href="settings.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">08</span>
+
+                    <span class="nav-label">
+                        Advanced Settings
+                    </span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Support
+                </div>
+
+                <a href="faq.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">09</span>
+
+                    <span class="nav-label">
+                        FAQ &amp; Help
+                    </span>
+
+                </a>
+
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <button type="button"
+                    class="btn btn-secondary btn-block"
+                    id="logoutButton">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN APPLICATION -->
+
+    <div class="main-wrapper">
+
+        <!-- UNIVERSAL HEADER -->
+
+        <header class="top-header">
+
+            <div class="header-left">
+
+                <button type="button"
+                        class="header-action menu-toggle"
+                        id="menuToggle"
+                        aria-label="Toggle navigation"
+                        aria-controls="appSidebar"
+                        aria-expanded="false">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+
+                    </svg>
+
+                </button>
+
+                <h1 class="header-title">
+                    Reports &amp; Insights
+                </h1>
+
+            </div>
+
+            <div class="header-right">
+
+                <button type="button"
+                        class="header-action"
+                        id="notificationButton"
+                        aria-label="Notifications">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+
+                        <path d="M10 21h4"></path>
+
+                    </svg>
+
+                </button>
+
+                <div class="user-menu">
+
+                    <div class="user-avatar"
+                         id="headerUserAvatar"
+                         aria-hidden="true">
+                    </div>
+
+                    <div class="user-details">
+
+                        <strong id="headerUserName"></strong>
+
+                        <small id="headerUserRole"></small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- MAIN CONTENT -->
+
+        <main class="main-content">
+
+            <div class="container-fluid">
+
+                <!-- PAGE HEADING -->
+
+                <div class="page-heading">
+
+                    <div>
+
+                        <h1>Reports &amp; Insights</h1>
+
+                        <p>
+                            Analyse authorised employee, attendance,
+                            leave and payroll records.
+                        </p>
+
+                    </div>
+
+                    <div class="page-actions">
+
+                        <button type="button"
+                                class="btn btn-secondary"
+                                id="refreshReports">
+
+                            Refresh
+
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-primary"
+                                id="openReportExport"
+                                disabled>
+
+                            Export Report
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- REPORT FILTERS -->
+
+                <section class="card mb-2"
+                         aria-labelledby="reportFiltersTitle">
+
+                    <div class="card-header">
+
+                        <h3 id="reportFiltersTitle">
+                            Report Configuration
+                        </h3>
+
+                        <span class="badge badge-primary"
+                              id="activeReportLabel">
+                            Select Report
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <form id="reportFilterForm">
+
+                            <div class="filter-bar">
+
+                                <!-- REPORT CATEGORY -->
+
+                                <div class="filter-item">
+
+                                    <label for="reportCategory"
+                                           class="form-label">
+
+                                        Report Category
+
+                                    </label>
+
+                                    <select id="reportCategory"
+                                            name="category"
+                                            class="form-control"
+                                            required>
+
+                                        <option value=""
+                                                selected
+                                                disabled>
+
+                                            Select Report Category
+
+                                        </option>
+
+                                        <!-- Available categories loaded by reports.js -->
+
+                                    </select>
+
+                                </div>
+
+                                <!-- DEPARTMENT -->
+
+                                <div class="filter-item">
+
+                                    <label for="reportDepartment"
+                                           class="form-label">
+
+                                        Department
+
+                                    </label>
+
+                                    <select id="reportDepartment"
+                                            name="department"
+                                            class="form-control">
+
+                                        <option value="">
+                                            All Authorised Departments
+                                        </option>
+
+                                        <!-- Firebase departments -->
+
+                                    </select>
+
+                                </div>
+
+                                <!-- START DATE -->
+
+                                <div class="filter-item">
+
+                                    <label for="reportStartDate"
+                                           class="form-label">
+
+                                        Start Date
+
+                                    </label>
+
+                                    <input type="date"
+                                           id="reportStartDate"
+                                           name="startDate"
+                                           class="form-control"
+                                           required>
+
+                                </div>
+
+                                <!-- END DATE -->
+
+                                <div class="filter-item">
+
+                                    <label for="reportEndDate"
+                                           class="form-label">
+
+                                        End Date
+
+                                    </label>
+
+                                    <input type="date"
+                                           id="reportEndDate"
+                                           name="endDate"
+                                           class="form-control"
+                                           required>
+
+                                </div>
+
+                                <!-- ACTIONS -->
+
+                                <div class="filter-actions">
+
+                                    <button type="submit"
+                                            class="btn btn-primary"
+                                            id="generateReportButton">
+
+                                        Generate Report
+
+                                    </button>
+
+                                    <button type="reset"
+                                            class="btn btn-secondary"
+                                            id="resetReportFilters">
+
+                                        Reset
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                            <div class="form-error"
+                                 id="reportFilterError"
+                                 role="alert"
+                                 hidden>
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                </section>
+
+                <!-- INITIAL REPORT STATE -->
+
+                <section class="card mb-2"
+                         id="reportInitialState"
+                         aria-label="Report Instructions">
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <h3>Select a Report</h3>
+
+                            <p>
+                                Choose an available report category
+                                and date range to retrieve authorised
+                                information.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- REPORT LOADING STATE -->
+
+                <section class="card mb-2"
+                         id="reportLoading"
+                         role="status"
+                         aria-live="polite"
+                         hidden>
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <div class="loading-spinner"></div>
+
+                            <p class="mt-2">
+                                Generating report from available records...
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- REPORT ERROR STATE -->
+
+                <section class="card mb-2"
+                         id="reportError"
+                         role="alert"
+                         hidden>
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <h3>Unable to Generate Report</h3>
+
+                            <p id="reportErrorMessage">
+                                The requested report could not be retrieved.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary mt-2"
+                                    id="retryReport">
+
+                                Try Again
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- REPORT EMPTY STATE -->
+
+                <section class="card mb-2"
+                         id="reportEmpty"
+                         hidden>
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <h3>No Records Available</h3>
+
+                            <p>
+                                No matching records were found for
+                                the selected report configuration.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- REPORT RESULTS -->
+
+                <div id="reportResults"
+                     hidden>
+
+                    <!-- GENERATED REPORT HEADING -->
+
+                    <section class="card mb-2"
+                             aria-labelledby="generatedReportTitle">
+
+                        <div class="card-body">
+
+                            <div class="page-heading">
+
+                                <div>
+
+                                    <h2 id="generatedReportTitle"></h2>
+
+                                    <p id="generatedReportDescription"></p>
+
+                                    <p class="text-muted"
+                                       id="generatedReportPeriod"></p>
+
+                                </div>
+
+                                <div class="page-actions">
+
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            id="printReport">
+
+                                        Print
+
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            id="previewFullReport">
+
+                                        Full Report View
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- DYNAMIC SUMMARY STATISTICS -->
+
+                    <section class="grid grid-4 mb-2"
+                             id="reportStatistics"
+                             aria-label="Report Summary">
+
+                        <!--
+                            Summary cards generated from
+                            the selected authorised report.
+                        -->
+
+                    </section>
+
+                    <!-- PRIMARY ANALYTICS -->
+
+                    <section class="grid grid-2 mb-2"
+                             aria-label="Report Analytics">
+
+                        <!-- PRIMARY CHART -->
+
+                        <article class="card"
+                                 id="primaryChartCard">
+
+                            <div class="card-header">
+
+                                <h3 id="primaryChartTitle">
+                                    Primary Analysis
+                                </h3>
+
+                            </div>
+
+                            <div class="card-body">
+
+                                <div id="primaryChartLoading"
+                                     class="empty-state"
+                                     role="status"
+                                     hidden>
+
+                                    <div class="loading-spinner"></div>
+
+                                    <p class="mt-2">
+                                        Preparing chart...
+                                    </p>
+
+                                </div>
+
+                                <div id="primaryChartEmpty"
+                                     class="empty-state"
+                                     hidden>
+
+                                    <h3>No Chart Data</h3>
+
+                                    <p>
+                                        Chart data is unavailable for
+                                        the selected report.
+                                    </p>
+
+                                </div>
+
+                                <div id="primaryChartContainer"
+                                     hidden>
+
+                                    <canvas id="primaryReportChart"
+                                            role="img"
+                                            aria-label="Primary report chart">
+                                    </canvas>
+
+                                </div>
+
+                                <div id="primaryChartAccessibleData"
+                                     hidden>
+
+                                    <!-- Accessible chart data -->
+
+                                </div>
+
+                            </div>
+
+                        </article>
+
+                        <!-- SECONDARY CHART -->
+
+                        <article class="card"
+                                 id="secondaryChartCard">
+
+                            <div class="card-header">
+
+                                <h3 id="secondaryChartTitle">
+                                    Secondary Analysis
+                                </h3>
+
+                            </div>
+
+                            <div class="card-body">
+
+                                <div id="secondaryChartLoading"
+                                     class="empty-state"
+                                     role="status"
+                                     hidden>
+
+                                    <div class="loading-spinner"></div>
+
+                                    <p class="mt-2">
+                                        Preparing chart...
+                                    </p>
+
+                                </div>
+
+                                <div id="secondaryChartEmpty"
+                                     class="empty-state"
+                                     hidden>
+
+                                    <h3>No Chart Data</h3>
+
+                                    <p>
+                                        Additional chart information
+                                        is unavailable.
+                                    </p>
+
+                                </div>
+
+                                <div id="secondaryChartContainer"
+                                     hidden>
+
+                                    <canvas id="secondaryReportChart"
+                                            role="img"
+                                            aria-label="Secondary report chart">
+                                    </canvas>
+
+                                </div>
+
+                                <div id="secondaryChartAccessibleData"
+                                     hidden>
+
+                                    <!-- Accessible chart data -->
+
+                                </div>
+
+                            </div>
+
+                        </article>
+
+                    </section>
+
+                    <!-- DETAILED REPORT TABLE -->
+
+                    <section class="card mb-2"
+                             aria-labelledby="detailedReportTitle">
+
+                        <div class="card-header">
+
+                            <h3 id="detailedReportTitle">
+                                Detailed Report
+                            </h3>
+
+                            <span class="badge badge-primary"
+                                  id="detailedReportCount">
+                                0 Records
+                            </span>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <!-- TABLE CONTROLS -->
+
+                            <div class="filter-bar">
+
+                                <div class="filter-search">
+
+                                    <label for="reportTableSearch"
+                                           class="form-label">
+
+                                        Search Report
+
+                                    </label>
+
+                                    <input type="search"
+                                           id="reportTableSearch"
+                                           class="form-control"
+                                           placeholder="Search report records"
+                                           autocomplete="off">
+
+                                </div>
+
+                                <div class="filter-item">
+
+                                    <label for="reportPageSize"
+                                           class="form-label">
+
+                                        Records Per Page
+
+                                    </label>
+
+                                    <select id="reportPageSize"
+                                            class="form-control">
+
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+                            <!-- DYNAMIC TABLE -->
+
+                            <div class="table-responsive"
+                                 id="reportTableContainer">
+
+                                <table class="data-table"
+                                       id="reportTable">
+
+                                    <caption id="reportTableCaption">
+                                        Detailed report records
+                                    </caption>
+
+                                    <thead id="reportTableHead">
+
+                                        <!--
+                                            Column headings generated
+                                            according to report category.
+                                        -->
+
+                                    </thead>
+
+                                    <tbody id="reportTableBody">
+
+                                        <!-- Authorised Firebase report rows -->
+
+                                    </tbody>
+
+                                    <tfoot id="reportTableFoot">
+
+                                        <!-- Optional calculated totals -->
+
+                                    </tfoot>
+
+                                </table>
+
+                            </div>
+
+                            <!-- PAGINATION -->
+
+                            <div class="table-pagination"
+                                 id="reportPagination">
+
+                                <span id="reportPaginationInfo">
+                                    Showing 0 of 0 records
+                                </span>
+
+                                <div class="pagination-actions">
+
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm"
+                                            id="reportPrevPage"
+                                            disabled>
+
+                                        Previous
+
+                                    </button>
+
+                                    <span id="reportCurrentPage">
+                                        Page 1
+                                    </span>
+
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm"
+                                            id="reportNextPage"
+                                            disabled>
+
+                                        Next
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- REPORT INSIGHTS -->
+
+                    <section class="card mb-2"
+                             id="reportInsightsCard"
+                             aria-labelledby="reportInsightsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="reportInsightsTitle">
+                                Additional Insights
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body"
+                             id="reportInsightsContent">
+
+                            <!--
+                                Insights computed from actual
+                                authorised records only.
+                            -->
+
+                        </div>
+
+                    </section>
+
+                    <!-- REPORT METADATA -->
+
+                    <section class="card"
+                             aria-labelledby="reportMetadataTitle">
+
+                        <div class="card-header">
+
+                            <h3 id="reportMetadataTitle">
+                                Report Information
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="grid grid-2">
+
+                                <p>
+
+                                    <strong>Report Type:</strong>
+
+                                    <span id="reportMetadataType"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Generated On:</strong>
+
+                                    <span id="reportMetadataDate"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Generated By:</strong>
+
+                                    <span id="reportMetadataUser"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Reporting Period:</strong>
+
+                                    <span id="reportMetadataPeriod"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Department:</strong>
+
+                                    <span id="reportMetadataDepartment"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Records Included:</strong>
+
+                                    <span id="reportMetadataRecords"></span>
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- UNIVERSAL FOOTER -->
+
+        <footer class="app-footer">
+
+            <span>
+                Employee Management &amp; Payroll System
+            </span>
+
+            <span>
+                Designed and Developed by Yadav Web Technologies
+            </span>
+
+        </footer>
+
+    </div>
+
+    <!-- REPORT EXPORT OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="reportExportBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="reportExportTitle">
+
+            <div class="modal-header">
+
+                <h2 id="reportExportTitle">
+                    Export Report
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeReportExport"
+                        aria-label="Close report export">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <form id="reportExportForm">
+
+                <div class="modal-body">
+
+                    <div class="form-group">
+
+                        <label for="reportExportFormat"
+                               class="form-label">
+
+                            Export Format
+
+                        </label>
+
+                        <select id="reportExportFormat"
+                                name="format"
+                                class="form-control"
+                                required>
+
+                            <option value=""
+                                    selected
+                                    disabled>
+
+                                Select Export Format
+
+                            </option>
+
+                            <option value="pdf">
+                                PDF Document
+                            </option>
+
+                            <option value="csv">
+                                CSV Spreadsheet
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="reportExportScope"
+                               class="form-label">
+
+                            Export Scope
+
+                        </label>
+
+                        <select id="reportExportScope"
+                                name="scope"
+                                class="form-control"
+                                required>
+
+                            <option value="all">
+                                All Authorised Matching Records
+                            </option>
+
+                            <option value="filtered">
+                                Currently Filtered Records
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="reportExportFilename"
+                               class="form-label">
+
+                            File Name
+
+                        </label>
+
+                        <input type="text"
+                               id="reportExportFilename"
+                               name="filename"
+                               class="form-control"
+                               maxlength="100"
+                               placeholder="Enter export file name"
+                               required>
+
+                    </div>
+
+                    <p class="form-help">
+                        Exported information will respect your
+                        verified permissions and selected report filters.
+                    </p>
+
+                    <div class="form-error"
+                         id="reportExportError"
+                         role="alert"
+                         hidden>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="cancelReportExport">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="confirmReportExport">
+
+                        Export
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+    <!-- REPORT RECORD DETAILS OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="reportRecordBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="reportRecordTitle">
+
+            <div class="modal-header">
+
+                <h2 id="reportRecordTitle">
+                    Record Details
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeReportRecord"
+                        aria-label="Close record details">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <div class="modal-body"
+                 id="reportRecordContent">
+
+                <!-- Authorised selected record details -->
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="reportRecordCloseButton">
+
+                    Close
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- FULL-PAGE REPORT VIEW -->
+
+    <section class="fullpage-view"
+             id="reportFullpageView"
+             aria-labelledby="reportFullpageTitle"
+             hidden>
+
+        <header class="fullpage-header">
+
+            <h2 id="reportFullpageTitle">
+                Detailed Report
+            </h2>
+
+            <div class="page-actions">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="fullpagePrintReport">
+
+                    Print
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="fullpageExportReport">
+
+                    Export
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="exitReportFullpage">
+
+                    Close Full Page
+
+                </button>
+
+            </div>
+
+        </header>
+
+        <div class="fullpage-body">
+
+            <div class="fullpage-container"
+                 id="reportFullpageContent">
+
+                <!--
+                    Complete authorised report rendered here.
+                    Includes company branding, report summary,
+                    detailed data and reporting metadata.
+                -->
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- UNIVERSAL CONFIRMATION DIALOG -->
+
+    <div class="modal-backdrop"
+         id="confirmBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="confirmTitle"
+                 aria-describedby="confirmMessage">
+
+            <div class="modal-body confirm-dialog">
+
+                <h2 class="confirm-title"
+                    id="confirmTitle">
+
+                    Confirm Action
+
+                </h2>
+
+                <p class="confirm-message"
+                   id="confirmMessage">
+
+                    Are you sure you want to continue?
+
+                </p>
+
+                <div class="confirm-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="confirmCancel">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmProceed">
+
+                        Confirm
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL NOTIFICATIONS -->
+
+    <div class="toast-container"
+         id="toastContainer"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</body>
+</html>
