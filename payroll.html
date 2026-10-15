@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>Payroll | Employee Management &amp; Payroll System</title>
+
+    <!-- Universal Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/filter.css">
+
+    <!-- External Scripts -->
+    <script src="js/script.js" defer></script>
+    <script src="js/payroll.js" defer></script>
+
+</head>
+
+<body class="app-layout"
+      data-page="payroll"
+      data-module="payroll">
+
+    <!-- MOBILE SIDEBAR BACKDROP -->
+
+    <div class="sidebar-backdrop"
+         id="sidebarBackdrop"
+         aria-hidden="true">
+    </div>
+
+    <!-- UNIVERSAL SIDEBAR -->
+
+    <aside class="sidebar" id="appSidebar">
+
+        <div class="sidebar-header">
+
+            <a href="dashboard.html" class="sidebar-brand">
+
+                <div class="brand-logo">EM</div>
+
+                <div class="brand-text">
+                    <h2>Employee Management</h2>
+                    <span>Payroll System</span>
+                </div>
+
+            </a>
+
+        </div>
+
+        <nav class="sidebar-body" aria-label="Main Navigation">
+
+            <div class="nav-section">
+
+                <div class="nav-title">Main Menu</div>
+
+                <a href="dashboard.html" class="nav-link">
+                    <span class="nav-icon">01</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+
+                <a href="employees.html" class="nav-link">
+                    <span class="nav-icon">02</span>
+                    <span class="nav-label">Employees</span>
+                </a>
+
+                <a href="attendance.html" class="nav-link">
+                    <span class="nav-icon">03</span>
+                    <span class="nav-label">Attendance</span>
+                </a>
+
+                <a href="leave.html" class="nav-link">
+                    <span class="nav-icon">04</span>
+                    <span class="nav-label">Leave Management</span>
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Finance</div>
+
+                <a href="payroll.html"
+                   class="nav-link active"
+                   aria-current="page">
+
+                    <span class="nav-icon">05</span>
+                    <span class="nav-label">Payroll</span>
+
+                </a>
+
+                <a href="payslips.html" class="nav-link">
+                    <span class="nav-icon">06</span>
+                    <span class="nav-label">Payslips</span>
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Management</div>
+
+                <a href="reports.html" class="nav-link">
+                    <span class="nav-icon">07</span>
+                    <span class="nav-label">Reports &amp; Insights</span>
+                </a>
+
+                <a href="settings.html" class="nav-link">
+                    <span class="nav-icon">08</span>
+                    <span class="nav-label">Advanced Settings</span>
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Support</div>
+
+                <a href="faq.html" class="nav-link">
+                    <span class="nav-icon">09</span>
+                    <span class="nav-label">FAQ &amp; Help</span>
+                </a>
+
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <button type="button"
+                    class="btn btn-secondary btn-block"
+                    id="logoutButton">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN APPLICATION -->
+
+    <div class="main-wrapper">
+
+        <!-- UNIVERSAL HEADER -->
+
+        <header class="top-header">
+
+            <div class="header-left">
+
+                <button type="button"
+                        class="header-action menu-toggle"
+                        id="menuToggle"
+                        aria-label="Toggle navigation"
+                        aria-controls="appSidebar"
+                        aria-expanded="false">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+
+                    </svg>
+
+                </button>
+
+                <h1 class="header-title">Payroll</h1>
+
+            </div>
+
+            <div class="header-right">
+
+                <button type="button"
+                        class="header-action"
+                        id="notificationButton"
+                        aria-label="Notifications">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                        <path d="M10 21h4"></path>
+
+                    </svg>
+
+                </button>
+
+                <div class="user-menu">
+
+                    <div class="user-avatar"
+                         id="headerUserAvatar"
+                         aria-hidden="true">
+                    </div>
+
+                    <div class="user-details">
+
+                        <strong id="headerUserName"></strong>
+
+                        <small id="headerUserRole"></small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- MAIN CONTENT -->
+
+        <main class="main-content">
+
+            <div class="container-fluid">
+
+                <!-- PAGE HEADING -->
+
+                <div class="page-heading">
+
+                    <div>
+
+                        <h1>Payroll Management</h1>
+
+                        <p>
+                            Calculate, review, approve and manage
+                            employee payroll records.
+                        </p>
+
+                    </div>
+
+                    <div class="page-actions">
+
+                        <button type="button"
+                                class="btn btn-secondary"
+                                id="exportPayroll">
+
+                            Export Payroll
+
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-primary"
+                                id="generatePayrollButton">
+
+                            Generate Payroll
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- PAYROLL STATISTICS -->
+
+                <section class="grid grid-4 mb-2"
+                         aria-label="Payroll Statistics">
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Gross Payroll
+                            </span>
+
+                            <span class="badge badge-primary">
+                                Earnings
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="grossPayroll">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Total gross earnings
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Total Deductions
+                            </span>
+
+                            <span class="badge badge-danger">
+                                Deductions
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="totalDeductions">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Combined payroll deductions
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Net Payroll
+                            </span>
+
+                            <span class="badge badge-success">
+                                Payable
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="netPayroll">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Total net salary payable
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Pending Approval
+                            </span>
+
+                            <span class="badge badge-warning">
+                                Pending
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="pendingPayroll">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Payroll records awaiting approval
+                        </p>
+
+                    </article>
+
+                </section>
+
+                <!-- PAYROLL PERIOD -->
+
+                <section class="card mb-2"
+                         aria-labelledby="payrollPeriodTitle">
+
+                    <div class="card-header">
+
+                        <h3 id="payrollPeriodTitle">
+                            Payroll Period
+                        </h3>
+
+                        <span class="badge badge-primary"
+                              id="payrollPeriodStatus">
+                            --
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <form id="payrollPeriodForm">
+
+                            <div class="grid grid-3">
+
+                                <div class="form-group">
+
+                                    <label for="payrollMonth"
+                                           class="form-label">
+                                        Select Month
+                                    </label>
+
+                                    <input type="month"
+                                           id="payrollMonth"
+                                           name="month"
+                                           class="form-control"
+                                           required>
+
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label for="payrollDepartment"
+                                           class="form-label">
+                                        Department
+                                    </label>
+
+                                    <select id="payrollDepartment"
+                                            name="department"
+                                            class="form-control">
+
+                                        <option value="">
+                                            All Departments
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label for="payrollCycle"
+                                           class="form-label">
+                                        Payroll Cycle
+                                    </label>
+
+                                    <select id="payrollCycle"
+                                            name="cycle"
+                                            class="form-control"
+                                            required>
+
+                                        <option value="" selected disabled>
+                                            Select Payroll Cycle
+                                        </option>
+
+                                        <!-- Loaded from company settings -->
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+                            <div class="form-actions">
+
+                                <button type="submit"
+                                        class="btn btn-primary"
+                                        id="loadPayrollPeriod">
+
+                                    Load Payroll
+
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                </section>
+
+                <!-- PAYROLL REGISTER -->
+
+                <section class="card"
+                         aria-labelledby="payrollRegisterTitle">
+
+                    <div class="card-header">
+
+                        <h3 id="payrollRegisterTitle">
+                            Payroll Register
+                        </h3>
+
+                        <span class="badge badge-primary"
+                              id="payrollRecordCount">
+                            0 Records
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- FILTERS -->
+
+                        <form id="payrollFilterForm"
+                              class="filter-bar"
+                              role="search">
+
+                            <div class="filter-search">
+
+                                <label for="payrollSearch"
+                                       class="form-label">
+                                    Search Employee
+                                </label>
+
+                                <input type="search"
+                                       id="payrollSearch"
+                                       name="search"
+                                       class="form-control"
+                                       placeholder="Search name or Employee ID"
+                                       autocomplete="off">
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="payrollStatusFilter"
+                                       class="form-label">
+                                    Payroll Status
+                                </label>
+
+                                <select id="payrollStatusFilter"
+                                        name="status"
+                                        class="form-control">
+
+                                    <option value="">All Status</option>
+                                    <option value="draft">Draft</option>
+                                    <option value="pending">Pending Approval</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="locked">Locked</option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="paymentStatusFilter"
+                                       class="form-label">
+                                    Payment Status
+                                </label>
+
+                                <select id="paymentStatusFilter"
+                                        name="paymentStatus"
+                                        class="form-control">
+
+                                    <option value="">All Payments</option>
+                                    <option value="unpaid">Unpaid</option>
+                                    <option value="partial">Partially Paid</option>
+                                    <option value="paid">Paid</option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="filter-actions">
+
+                                <button type="submit"
+                                        class="btn btn-primary"
+                                        id="applyPayrollFilters">
+                                    Apply
+                                </button>
+
+                                <button type="reset"
+                                        class="btn btn-secondary"
+                                        id="resetPayrollFilters">
+                                    Reset
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                        <!-- LOADING STATE -->
+
+                        <div class="empty-state"
+                             id="payrollLoading"
+                             role="status"
+                             aria-live="polite"
+                             hidden>
+
+                            <div class="loading-spinner"></div>
+
+                            <p class="mt-2">
+                                Loading payroll records...
+                            </p>
+
+                        </div>
+
+                        <!-- ERROR STATE -->
+
+                        <div class="empty-state"
+                             id="payrollError"
+                             role="alert"
+                             hidden>
+
+                            <h3>Unable to Load Payroll</h3>
+
+                            <p id="payrollErrorMessage">
+                                Payroll records could not be retrieved.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary mt-2"
+                                    id="retryPayroll">
+                                Try Again
+                            </button>
+
+                        </div>
+
+                        <!-- PAYROLL TABLE -->
+
+                        <div class="table-responsive"
+                             id="payrollTableContainer">
+
+                            <table class="data-table"
+                                   id="payrollTable">
+
+                                <thead>
+
+                                    <tr>
+                                        <th scope="col">Employee ID</th>
+                                        <th scope="col">Employee</th>
+                                        <th scope="col">Basic Salary</th>
+                                        <th scope="col">Allowances</th>
+                                        <th scope="col">Deductions</th>
+                                        <th scope="col">Gross Salary</th>
+                                        <th scope="col">Net Salary</th>
+                                        <th scope="col">Payroll Status</th>
+                                        <th scope="col">Payment</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+
+                                </thead>
+
+                                <tbody id="payrollTableBody">
+
+                                    <tr id="payrollEmptyRow">
+
+                                        <td colspan="10">
+
+                                            <div class="empty-state">
+
+                                                <h3>No Payroll Records</h3>
+
+                                                <p>
+                                                    Select a payroll period to
+                                                    retrieve available records.
+                                                </p>
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                        <!-- PAGINATION -->
+
+                        <div class="table-pagination"
+                             id="payrollPagination">
+
+                            <span id="payrollPaginationInfo">
+                                Showing 0 of 0 records
+                            </span>
+
+                            <div class="pagination-actions">
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="payrollPrevPage"
+                                        disabled>
+                                    Previous
+                                </button>
+
+                                <span id="payrollCurrentPage">
+                                    Page 1
+                                </span>
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="payrollNextPage"
+                                        disabled>
+                                    Next
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- PAYROLL ACTIONS -->
+
+                    <div class="card-footer">
+
+                        <div class="page-actions">
+
+                            <button type="button"
+                                    class="btn btn-secondary"
+                                    id="submitPayrollApproval"
+                                    disabled>
+                                Submit for Approval
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-success"
+                                    id="approvePayrollButton"
+                                    hidden
+                                    disabled>
+                                Approve Payroll
+                            </button>
+
+                            <button type="button"
+                                    class="btn btn-primary"
+                                    id="lockPayrollButton"
+                                    hidden
+                                    disabled>
+                                Finalise &amp; Lock
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </main>
+
+        <!-- UNIVERSAL FOOTER -->
+
+        <footer class="app-footer">
+
+            <span>
+                Employee Management &amp; Payroll System
+            </span>
+
+            <span>
+                Designed and Developed by Yadav Web Technologies
+            </span>
+
+        </footer>
+
+    </div>
+
+    <!-- GENERATE PAYROLL OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="generatePayrollBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="generatePayrollTitle">
+
+            <div class="modal-header">
+
+                <h2 id="generatePayrollTitle">
+                    Generate Payroll
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeGeneratePayroll"
+                        aria-label="Close payroll generation">
+                    &times;
+                </button>
+
+            </div>
+
+            <form id="generatePayrollForm">
+
+                <div class="modal-body">
+
+                    <div class="grid grid-2">
+
+                        <div class="form-group">
+
+                            <label for="generatePayrollMonth"
+                                   class="form-label">
+                                Payroll Month
+                            </label>
+
+                            <input type="month"
+                                   id="generatePayrollMonth"
+                                   name="month"
+                                   class="form-control"
+                                   required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="generatePayrollDepartment"
+                                   class="form-label">
+                                Department
+                            </label>
+
+                            <select id="generatePayrollDepartment"
+                                    name="department"
+                                    class="form-control">
+
+                                <option value="">
+                                    All Departments
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="generatePayrollCycle"
+                                   class="form-label">
+                                Payroll Cycle
+                            </label>
+
+                            <select id="generatePayrollCycle"
+                                    name="cycle"
+                                    class="form-control"
+                                    required>
+
+                                <option value="" selected disabled>
+                                    Select Payroll Cycle
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    </div>
+
+                    <p class="form-help">
+                        Payroll calculations will follow the configured
+                        company salary structure, attendance, leave,
+                        allowances and deduction policies.
+                    </p>
+
+                    <div id="generatePayrollError"
+                         class="form-error"
+                         role="alert"
+                         hidden>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="cancelGeneratePayroll">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="confirmGeneratePayroll">
+                        Generate Draft
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+    <!-- PAYROLL DETAILS OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="payrollDetailsBackdrop"
+         hidden>
+
+        <section class="modal modal-xl"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="payrollDetailsTitle">
+
+            <div class="modal-header">
+
+                <h2 id="payrollDetailsTitle">
+                    Payroll Details
+                </h2>
+
+                <div class="page-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary btn-sm"
+                            id="expandPayrollDetails">
+                        Full Page View
+                    </button>
+
+                    <button type="button"
+                            class="modal-close"
+                            id="closePayrollDetails"
+                            aria-label="Close payroll details">
+                        &times;
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="modal-body"
+                 id="payrollDetailsContent">
+
+                <!-- Authorised payroll details from Firebase -->
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="payrollDetailsCloseButton">
+                    Close
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="editPayrollButton"
+                        hidden>
+                    Edit Draft
+                </button>
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="viewPayrollPayslip"
+                        hidden>
+                    View Payslip
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- PAYROLL ADJUSTMENT OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="payrollAdjustmentBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="payrollAdjustmentTitle">
+
+            <div class="modal-header">
+
+                <h2 id="payrollAdjustmentTitle">
+                    Payroll Adjustment
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closePayrollAdjustment"
+                        aria-label="Close payroll adjustment">
+                    &times;
+                </button>
+
+            </div>
+
+            <form id="payrollAdjustmentForm">
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="adjustmentPayrollId"
+                           name="payrollId">
+
+                    <div class="grid grid-2">
+
+                        <div class="form-group">
+
+                            <label for="adjustmentType"
+                                   class="form-label">
+                                Adjustment Type
+                            </label>
+
+                            <select id="adjustmentType"
+                                    name="type"
+                                    class="form-control"
+                                    required>
+
+                                <option value="" selected disabled>
+                                    Select Adjustment
+                                </option>
+
+                                <option value="allowance">
+                                    Allowance
+                                </option>
+
+                                <option value="deduction">
+                                    Deduction
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="adjustmentComponent"
+                                   class="form-label">
+                                Salary Component
+                            </label>
+
+                            <select id="adjustmentComponent"
+                                    name="component"
+                                    class="form-control"
+                                    required>
+
+                                <option value="" selected disabled>
+                                    Select Component
+                                </option>
+
+                                <!-- Loaded from payroll settings -->
+
+                            </select>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="adjustmentAmount"
+                                   class="form-label">
+                                Amount
+                            </label>
+
+                            <input type="number"
+                                   id="adjustmentAmount"
+                                   name="amount"
+                                   class="form-control"
+                                   min="0.01"
+                                   step="0.01"
+                                   required>
+
+                        </div>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label for="adjustmentReason"
+                               class="form-label">
+                            Adjustment Reason
+                        </label>
+
+                        <textarea id="adjustmentReason"
+                                  name="reason"
+                                  class="form-control"
+                                  maxlength="1000"
+                                  required></textarea>
+
+                    </div>
+
+                    <div id="payrollAdjustmentError"
+                         class="form-error"
+                         role="alert"
+                         hidden>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="cancelPayrollAdjustment">
+                        Cancel
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="savePayrollAdjustment">
+                        Save Adjustment
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+    <!-- FULL-PAGE PAYROLL VIEW -->
+
+    <section class="fullpage-view"
+             id="payrollFullpageView"
+             aria-labelledby="payrollFullpageTitle"
+             hidden>
+
+        <header class="fullpage-header">
+
+            <h2 id="payrollFullpageTitle">
+                Payroll Details
+            </h2>
+
+            <div class="page-actions">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="printPayrollDetails">
+                    Print
+                </button>
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="exitPayrollFullpage">
+                    Close Full Page
+                </button>
+
+            </div>
+
+        </header>
+
+        <div class="fullpage-body">
+
+            <div class="fullpage-container"
+                 id="payrollFullpageContent">
+
+                <!-- Authorised payroll record -->
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- UNIVERSAL CONFIRMATION DIALOG -->
+
+    <div class="modal-backdrop"
+         id="confirmBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="confirmTitle"
+                 aria-describedby="confirmMessage">
+
+            <div class="modal-body confirm-dialog">
+
+                <h2 class="confirm-title"
+                    id="confirmTitle">
+                    Confirm Action
+                </h2>
+
+                <p class="confirm-message"
+                   id="confirmMessage">
+                    Are you sure you want to continue?
+                </p>
+
+                <div class="confirm-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="confirmCancel">
+                        Cancel
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmProceed">
+                        Confirm
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL NOTIFICATIONS -->
+
+    <div class="toast-container"
+         id="toastContainer"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</body>
+</html>
