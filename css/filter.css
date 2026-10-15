@@ -1,0 +1,512 @@
+/* =========================================================
+   EMPLOYEE MANAGEMENT & PAYROLL SYSTEM
+   FILE: css/filter.css
+
+   PURPOSE:
+   Universal search, filtering and filter-action styling.
+
+   DEPENDENCIES:
+   1. css/style.css
+
+   RULES:
+   - Filter-specific selectors only.
+   - No duplicated universal CSS declarations.
+   - Fully responsive.
+   - Compatible with Firebase-generated options.
+   - No inline CSS or JavaScript required.
+========================================================= */
+
+
+/* =========================================================
+   01. UNIVERSAL FILTER BAR
+========================================================= */
+
+.filter-bar {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+
+/* =========================================================
+   02. SEARCH FIELD CONTAINER
+========================================================= */
+
+.filter-search {
+    flex: 2 1 230px;
+    min-width: 0;
+}
+
+.filter-search .form-control {
+    width: 100%;
+    min-width: 0;
+}
+
+.filter-search input[type="search"] {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.filter-search input[type="search"]::-webkit-search-cancel-button {
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   03. INDIVIDUAL FILTER FIELDS
+========================================================= */
+
+.filter-item {
+    flex: 1 1 145px;
+    min-width: 0;
+}
+
+.filter-item .form-control {
+    width: 100%;
+    min-width: 0;
+}
+
+.filter-item select {
+    max-width: 100%;
+    cursor: pointer;
+}
+
+.filter-item input[type="date"],
+.filter-item input[type="month"],
+.filter-item input[type="time"] {
+    max-width: 100%;
+    min-width: 0;
+}
+
+
+/* =========================================================
+   04. FILTER ACTION BUTTONS
+========================================================= */
+
+.filter-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.filter-actions .btn {
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   05. OPTIONAL FILTER GROUP
+========================================================= */
+
+.filter-group {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.filter-group-title {
+    flex-basis: 100%;
+    margin-bottom: 2px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   06. ACTIVE FILTER INDICATORS
+========================================================= */
+
+.filter-active-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+}
+
+.filter-active-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    padding: 6px 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.filter-active-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 17px;
+    height: 17px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: inherit;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.filter-active-remove:hover {
+    background: var(--surface);
+}
+
+.filter-active-remove:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   07. FILTER RESULTS INFORMATION
+========================================================= */
+
+.filter-results {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 14px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.filter-results-count {
+    color: var(--text);
+    font-weight: 700;
+}
+
+.filter-results-description {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   08. COLLAPSIBLE ADVANCED FILTERS
+========================================================= */
+
+.filter-advanced {
+    width: 100%;
+    min-width: 0;
+}
+
+.filter-advanced[hidden] {
+    display: none;
+}
+
+.filter-advanced-panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface-alt);
+}
+
+.filter-advanced-panel > * {
+    min-width: 0;
+}
+
+.filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 6px 0;
+    border: none;
+    background: transparent;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.filter-toggle:hover {
+    color: var(--primary-hover);
+}
+
+.filter-toggle svg {
+    width: 15px;
+    height: 15px;
+    transition: transform var(--transition);
+}
+
+.filter-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   09. FILTER CATEGORY BUTTONS
+
+   Suitable for dynamically generated FAQ categories
+   and other optional category-based filtering.
+========================================================= */
+
+.filter-category-list {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+}
+
+.filter-category {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    max-width: 100%;
+    padding: 9px 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+    transition:
+        color var(--transition),
+        border-color var(--transition),
+        background-color var(--transition);
+}
+
+.filter-category:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+.filter-category.active,
+.filter-category[aria-pressed="true"] {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--surface);
+}
+
+.filter-category:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   10. FILTER LOADING / DISABLED STATE
+========================================================= */
+
+.filter-bar[aria-busy="true"] {
+    opacity: 0.7;
+}
+
+.filter-bar[aria-busy="true"] .filter-actions {
+    pointer-events: none;
+}
+
+.filter-item .form-control:disabled,
+.filter-search .form-control:disabled {
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   11. DATE RANGE FILTERS
+========================================================= */
+
+.filter-date-range {
+    display: flex;
+    align-items: flex-end;
+    flex: 2 1 300px;
+    gap: 10px;
+    min-width: 0;
+}
+
+.filter-date-range > * {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+
+/* =========================================================
+   12. TABLET RESPONSIVENESS
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .filter-search {
+        flex-basis: 200px;
+    }
+
+    .filter-item {
+        flex-basis: 140px;
+    }
+
+    .filter-advanced-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   13. MOBILE RESPONSIVENESS
+========================================================= */
+
+@media (max-width: 760px) {
+
+    .filter-bar {
+        align-items: stretch;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+    }
+
+    .filter-search {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .filter-item {
+        flex: 1 1 calc(50% - 6px);
+    }
+
+    .filter-actions {
+        justify-content: stretch;
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .filter-actions .btn {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .filter-advanced-panel {
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .filter-date-range {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================================
+   14. SMALL MOBILE DEVICES
+========================================================= */
+
+@media (max-width: 480px) {
+
+    .filter-bar {
+        gap: 11px;
+    }
+
+    .filter-item {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+
+    .filter-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-actions .btn {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .filter-advanced-panel {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .filter-date-range {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-date-range > * {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .filter-category {
+        flex: 1 1 auto;
+    }
+
+    .filter-results {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+}
+
+
+/* =========================================================
+   15. REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .filter-toggle svg,
+    .filter-category {
+        transition: none;
+    }
+
+}
+
+
+/* =========================================================
+   16. PRINT STYLES
+========================================================= */
+
+@media print {
+
+    .filter-bar,
+    .filter-group,
+    .filter-active-list,
+    .filter-toggle,
+    .filter-category-list,
+    .filter-advanced,
+    .filter-results {
+        display: none !important;
+    }
+
+}
