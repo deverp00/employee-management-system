@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="robots" content="noindex, nofollow">
+
+    <meta name="description"
+          content="Employee payslip management and payroll records.">
+
+    <title>Payslips | Employee Management &amp; Payroll System</title>
+
+    <!-- UNIVERSAL STYLESHEETS -->
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/filter.css">
+
+    <!-- EXTERNAL JAVASCRIPT -->
+
+    <script src="js/script.js" defer></script>
+    <script src="js/payslips.js" defer></script>
+
+</head>
+
+<body class="app-layout"
+      data-page="payslips"
+      data-module="payslips">
+
+    <!-- MOBILE SIDEBAR BACKDROP -->
+
+    <div class="sidebar-backdrop"
+         id="sidebarBackdrop"
+         aria-hidden="true">
+    </div>
+
+    <!-- UNIVERSAL SIDEBAR -->
+
+    <aside class="sidebar" id="appSidebar">
+
+        <div class="sidebar-header">
+
+            <a href="dashboard.html" class="sidebar-brand">
+
+                <div class="brand-logo">EM</div>
+
+                <div class="brand-text">
+
+                    <h2>Employee Management</h2>
+
+                    <span>Payroll System</span>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <nav class="sidebar-body"
+             aria-label="Main Navigation">
+
+            <div class="nav-section">
+
+                <div class="nav-title">Main Menu</div>
+
+                <a href="dashboard.html" class="nav-link">
+
+                    <span class="nav-icon">01</span>
+
+                    <span class="nav-label">Dashboard</span>
+
+                </a>
+
+                <a href="employees.html" class="nav-link">
+
+                    <span class="nav-icon">02</span>
+
+                    <span class="nav-label">Employees</span>
+
+                </a>
+
+                <a href="attendance.html" class="nav-link">
+
+                    <span class="nav-icon">03</span>
+
+                    <span class="nav-label">Attendance</span>
+
+                </a>
+
+                <a href="leave.html" class="nav-link">
+
+                    <span class="nav-icon">04</span>
+
+                    <span class="nav-label">Leave Management</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Finance</div>
+
+                <a href="payroll.html" class="nav-link">
+
+                    <span class="nav-icon">05</span>
+
+                    <span class="nav-label">Payroll</span>
+
+                </a>
+
+                <a href="payslips.html"
+                   class="nav-link active"
+                   aria-current="page">
+
+                    <span class="nav-icon">06</span>
+
+                    <span class="nav-label">Payslips</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Management</div>
+
+                <a href="reports.html" class="nav-link">
+
+                    <span class="nav-icon">07</span>
+
+                    <span class="nav-label">Reports &amp; Insights</span>
+
+                </a>
+
+                <a href="settings.html" class="nav-link">
+
+                    <span class="nav-icon">08</span>
+
+                    <span class="nav-label">Advanced Settings</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">Support</div>
+
+                <a href="faq.html" class="nav-link">
+
+                    <span class="nav-icon">09</span>
+
+                    <span class="nav-label">FAQ &amp; Help</span>
+
+                </a>
+
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <button type="button"
+                    class="btn btn-secondary btn-block"
+                    id="logoutButton">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN APPLICATION -->
+
+    <div class="main-wrapper">
+
+        <!-- UNIVERSAL HEADER -->
+
+        <header class="top-header">
+
+            <div class="header-left">
+
+                <button type="button"
+                        class="header-action menu-toggle"
+                        id="menuToggle"
+                        aria-label="Toggle navigation"
+                        aria-controls="appSidebar"
+                        aria-expanded="false">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+
+                    </svg>
+
+                </button>
+
+                <h1 class="header-title">Payslips</h1>
+
+            </div>
+
+            <div class="header-right">
+
+                <button type="button"
+                        class="header-action"
+                        id="notificationButton"
+                        aria-label="Notifications">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+
+                        <path d="M10 21h4"></path>
+
+                    </svg>
+
+                </button>
+
+                <div class="user-menu">
+
+                    <div class="user-avatar"
+                         id="headerUserAvatar"
+                         aria-hidden="true">
+                    </div>
+
+                    <div class="user-details">
+
+                        <strong id="headerUserName"></strong>
+
+                        <small id="headerUserRole"></small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- MAIN CONTENT -->
+
+        <main class="main-content">
+
+            <div class="container-fluid">
+
+                <!-- PAGE HEADING -->
+
+                <div class="page-heading">
+
+                    <div>
+
+                        <h1>Payslip Management</h1>
+
+                        <p>
+                            Access, review, download and manage
+                            authorised employee salary statements.
+                        </p>
+
+                    </div>
+
+                    <div class="page-actions">
+
+                        <button type="button"
+                                class="btn btn-secondary"
+                                id="refreshPayslips">
+
+                            Refresh
+
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-primary"
+                                id="exportPayslipRegister"
+                                hidden>
+
+                            Export Register
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- PAYSLIP STATISTICS -->
+
+                <section class="grid grid-4 mb-2"
+                         aria-label="Payslip Statistics">
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Total Payslips
+                            </span>
+
+                            <span class="badge badge-primary">
+                                Records
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="totalPayslips">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Available authorised payslips
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Total Gross Pay
+                            </span>
+
+                            <span class="badge badge-primary">
+                                Earnings
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="payslipGrossTotal">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Gross pay for the selected period
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Total Deductions
+                            </span>
+
+                            <span class="badge badge-danger">
+                                Deductions
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="payslipDeductionTotal">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Deductions for the selected period
+                        </p>
+
+                    </article>
+
+                    <article class="card stat-card">
+
+                        <div class="stat-top">
+
+                            <span class="stat-label">
+                                Total Net Pay
+                            </span>
+
+                            <span class="badge badge-success">
+                                Net Pay
+                            </span>
+
+                        </div>
+
+                        <div class="stat-value"
+                             id="payslipNetTotal">
+                            --
+                        </div>
+
+                        <p class="stat-description">
+                            Net pay for the selected period
+                        </p>
+
+                    </article>
+
+                </section>
+
+                <!-- PAYSLIP DIRECTORY -->
+
+                <section class="card"
+                         aria-labelledby="payslipDirectoryTitle">
+
+                    <div class="card-header">
+
+                        <h3 id="payslipDirectoryTitle">
+                            Payslip Directory
+                        </h3>
+
+                        <span class="badge badge-primary"
+                              id="payslipRecordCount">
+
+                            0 Records
+
+                        </span>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- SEARCH AND FILTERS -->
+
+                        <form id="payslipFilterForm"
+                              class="filter-bar"
+                              role="search">
+
+                            <div class="filter-search">
+
+                                <label for="payslipSearch"
+                                       class="form-label">
+
+                                    Search Payslips
+
+                                </label>
+
+                                <input type="search"
+                                       id="payslipSearch"
+                                       name="search"
+                                       class="form-control"
+                                       placeholder="Search employee, ID or payslip number"
+                                       autocomplete="off">
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="payslipMonth"
+                                       class="form-label">
+
+                                    Payroll Month
+
+                                </label>
+
+                                <input type="month"
+                                       id="payslipMonth"
+                                       name="month"
+                                       class="form-control">
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="payslipDepartment"
+                                       class="form-label">
+
+                                    Department
+
+                                </label>
+
+                                <select id="payslipDepartment"
+                                        name="department"
+                                        class="form-control">
+
+                                    <option value="">
+                                        All Departments
+                                    </option>
+
+                                    <!-- Loaded from Firebase -->
+
+                                </select>
+
+                            </div>
+
+                            <div class="filter-item">
+
+                                <label for="payslipPaymentStatus"
+                                       class="form-label">
+
+                                    Payment Status
+
+                                </label>
+
+                                <select id="payslipPaymentStatus"
+                                        name="paymentStatus"
+                                        class="form-control">
+
+                                    <option value="">
+                                        All Payments
+                                    </option>
+
+                                    <option value="unpaid">
+                                        Unpaid
+                                    </option>
+
+                                    <option value="partial">
+                                        Partially Paid
+                                    </option>
+
+                                    <option value="paid">
+                                        Paid
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="filter-actions">
+
+                                <button type="submit"
+                                        class="btn btn-primary"
+                                        id="applyPayslipFilters">
+
+                                    Apply
+
+                                </button>
+
+                                <button type="reset"
+                                        class="btn btn-secondary"
+                                        id="resetPayslipFilters">
+
+                                    Reset
+
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                        <!-- DATABASE LOADING STATE -->
+
+                        <div class="empty-state"
+                             id="payslipLoading"
+                             role="status"
+                             aria-live="polite"
+                             hidden>
+
+                            <div class="loading-spinner"></div>
+
+                            <p class="mt-2">
+                                Loading payslip records...
+                            </p>
+
+                        </div>
+
+                        <!-- DATABASE ERROR STATE -->
+
+                        <div class="empty-state"
+                             id="payslipError"
+                             role="alert"
+                             hidden>
+
+                            <h3>Unable to Load Payslips</h3>
+
+                            <p id="payslipErrorMessage">
+                                Payslip records could not be retrieved.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary mt-2"
+                                    id="retryPayslips">
+
+                                Try Again
+
+                            </button>
+
+                        </div>
+
+                        <!-- PAYSLIP TABLE -->
+
+                        <div class="table-responsive"
+                             id="payslipTableContainer">
+
+                            <table class="data-table"
+                                   id="payslipTable">
+
+                                <thead>
+
+                                    <tr>
+
+                                        <th scope="col">
+                                            Payslip Number
+                                        </th>
+
+                                        <th scope="col">
+                                            Employee ID
+                                        </th>
+
+                                        <th scope="col">
+                                            Employee
+                                        </th>
+
+                                        <th scope="col">
+                                            Payroll Period
+                                        </th>
+
+                                        <th scope="col">
+                                            Gross Pay
+                                        </th>
+
+                                        <th scope="col">
+                                            Deductions
+                                        </th>
+
+                                        <th scope="col">
+                                            Net Pay
+                                        </th>
+
+                                        <th scope="col">
+                                            Payment Status
+                                        </th>
+
+                                        <th scope="col">
+                                            Actions
+                                        </th>
+
+                                    </tr>
+
+                                </thead>
+
+                                <tbody id="payslipTableBody">
+
+                                    <tr id="payslipEmptyRow">
+
+                                        <td colspan="9">
+
+                                            <div class="empty-state">
+
+                                                <h3>No Payslips Available</h3>
+
+                                                <p>
+                                                    Authorised payslips from
+                                                    finalised payroll records
+                                                    will appear here.
+                                                </p>
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+                                </tbody>
+
+                            </table>
+
+                        </div>
+
+                        <!-- PAGINATION -->
+
+                        <div class="table-pagination"
+                             id="payslipPagination">
+
+                            <span id="payslipPaginationInfo">
+                                Showing 0 of 0 records
+                            </span>
+
+                            <div class="pagination-actions">
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="payslipPrevPage"
+                                        disabled>
+
+                                    Previous
+
+                                </button>
+
+                                <span id="payslipCurrentPage">
+                                    Page 1
+                                </span>
+
+                                <button type="button"
+                                        class="btn btn-secondary btn-sm"
+                                        id="payslipNextPage"
+                                        disabled>
+
+                                    Next
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+        </main>
+
+        <!-- UNIVERSAL FOOTER -->
+
+        <footer class="app-footer">
+
+            <span>
+                Employee Management &amp; Payroll System
+            </span>
+
+            <span>
+                Designed and Developed by Yadav Web Technologies
+            </span>
+
+        </footer>
+
+    </div>
+
+    <!-- PAYSLIP PREVIEW OVERLAY -->
+
+    <div class="modal-backdrop"
+         id="payslipPreviewBackdrop"
+         hidden>
+
+        <section class="modal modal-xl"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="payslipPreviewTitle">
+
+            <div class="modal-header">
+
+                <h2 id="payslipPreviewTitle">
+                    Payslip Preview
+                </h2>
+
+                <div class="page-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary btn-sm"
+                            id="expandPayslip">
+
+                        Full Page View
+
+                    </button>
+
+                    <button type="button"
+                            class="modal-close"
+                            id="closePayslipPreview"
+                            aria-label="Close payslip preview">
+
+                        &times;
+
+                    </button>
+
+                </div>
+
+            </div>
+
+            <div class="modal-body">
+
+                <!-- PREVIEW LOADING STATE -->
+
+                <div class="empty-state"
+                     id="payslipPreviewLoading"
+                     role="status"
+                     aria-live="polite"
+                     hidden>
+
+                    <div class="loading-spinner"></div>
+
+                    <p class="mt-2">
+                        Loading payslip details...
+                    </p>
+
+                </div>
+
+                <!-- PREVIEW ERROR STATE -->
+
+                <div class="empty-state"
+                     id="payslipPreviewError"
+                     role="alert"
+                     hidden>
+
+                    <h3>Unable to Display Payslip</h3>
+
+                    <p id="payslipPreviewErrorMessage"></p>
+
+                </div>
+
+                <!-- DYNAMIC PAYSLIP DOCUMENT -->
+
+                <article class="card"
+                         id="payslipDocument"
+                         aria-label="Employee Salary Statement"
+                         hidden>
+
+                    <!-- COMPANY BRANDING -->
+
+                    <header class="card-header">
+
+                        <div class="d-flex align-center gap-2">
+
+                            <img id="payslipCompanyLogo"
+                                 alt="Company Logo"
+                                 hidden>
+
+                            <div>
+
+                                <h2 id="payslipCompanyName"></h2>
+
+                                <p class="text-muted"
+                                   id="payslipCompanyAddress"></p>
+
+                                <p class="text-muted"
+                                   id="payslipCompanyContact"></p>
+
+                            </div>
+
+                        </div>
+
+                    </header>
+
+                    <div class="card-body">
+
+                        <!-- DOCUMENT HEADING -->
+
+                        <div class="text-center mb-2">
+
+                            <h2 id="payslipDocumentHeading">
+                                Salary Statement
+                            </h2>
+
+                            <p class="text-muted"
+                               id="payslipPeriodLabel"></p>
+
+                            <span class="badge badge-primary"
+                                  id="payslipDocumentNumber"></span>
+
+                        </div>
+
+                        <!-- EMPLOYEE INFORMATION -->
+
+                        <section aria-labelledby="payslipEmployeeHeading">
+
+                            <h3 class="mb-2"
+                                id="payslipEmployeeHeading">
+
+                                Employee Information
+
+                            </h3>
+
+                            <div class="grid grid-2">
+
+                                <div>
+
+                                    <p>
+                                        <strong>Employee Name:</strong>
+                                        <span id="slipEmployeeName"></span>
+                                    </p>
+
+                                    <p>
+                                        <strong>Employee ID:</strong>
+                                        <span id="slipEmployeeId"></span>
+                                    </p>
+
+                                    <p>
+                                        <strong>Department:</strong>
+                                        <span id="slipDepartment"></span>
+                                    </p>
+
+                                    <p>
+                                        <strong>Designation:</strong>
+                                        <span id="slipDesignation"></span>
+                                    </p>
+
+                                </div>
+
+                                <div>
+
+                                    <p>
+                                        <strong>Payroll Period:</strong>
+                                        <span id="slipPayrollPeriod"></span>
+                                    </p>
+
+                                    <p>
+                                        <strong>Issue Date:</strong>
+                                        <span id="slipIssueDate"></span>
+                                    </p>
+
+                                    <p>
+                                        <strong>Payment Status:</strong>
+                                        <span id="slipPaymentStatus"></span>
+                                    </p>
+
+                                    <p>
+                                        <strong>Payment Reference:</strong>
+                                        <span id="slipPaymentReference"></span>
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        </section>
+
+                        <!-- ATTENDANCE SUMMARY -->
+
+                        <section class="mt-2"
+                                 aria-labelledby="payslipAttendanceHeading">
+
+                            <h3 class="mb-2"
+                                id="payslipAttendanceHeading">
+
+                                Attendance Summary
+
+                            </h3>
+
+                            <div class="grid grid-4">
+
+                                <div>
+
+                                    <span class="text-muted">
+                                        Payable Days
+                                    </span>
+
+                                    <h3 id="slipPayableDays"></h3>
+
+                                </div>
+
+                                <div>
+
+                                    <span class="text-muted">
+                                        Present Days
+                                    </span>
+
+                                    <h3 id="slipPresentDays"></h3>
+
+                                </div>
+
+                                <div>
+
+                                    <span class="text-muted">
+                                        Paid Leave
+                                    </span>
+
+                                    <h3 id="slipPaidLeave"></h3>
+
+                                </div>
+
+                                <div>
+
+                                    <span class="text-muted">
+                                        Unpaid Leave
+                                    </span>
+
+                                    <h3 id="slipUnpaidLeave"></h3>
+
+                                </div>
+
+                            </div>
+
+                        </section>
+
+                        <!-- EARNINGS AND DEDUCTIONS -->
+
+                        <section class="mt-2"
+                                 aria-labelledby="payslipBreakdownHeading">
+
+                            <h3 class="mb-2"
+                                id="payslipBreakdownHeading">
+
+                                Salary Breakdown
+
+                            </h3>
+
+                            <div class="grid grid-2">
+
+                                <!-- EARNINGS -->
+
+                                <div class="card">
+
+                                    <div class="card-header">
+
+                                        <h3>Earnings</h3>
+
+                                    </div>
+
+                                    <div class="card-body">
+
+                                        <div class="table-responsive">
+
+                                            <table class="data-table"
+                                                   id="payslipEarningsTable">
+
+                                                <thead>
+
+                                                    <tr>
+
+                                                        <th scope="col">
+                                                            Component
+                                                        </th>
+
+                                                        <th scope="col">
+                                                            Amount
+                                                        </th>
+
+                                                    </tr>
+
+                                                </thead>
+
+                                                <tbody id="payslipEarningsBody">
+
+                                                    <!-- Firebase earnings -->
+
+                                                </tbody>
+
+                                                <tfoot>
+
+                                                    <tr>
+
+                                                        <th scope="row">
+                                                            Gross Earnings
+                                                        </th>
+
+                                                        <td id="slipGrossEarnings"></td>
+
+                                                    </tr>
+
+                                                </tfoot>
+
+                                            </table>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <!-- DEDUCTIONS -->
+
+                                <div class="card">
+
+                                    <div class="card-header">
+
+                                        <h3>Deductions</h3>
+
+                                    </div>
+
+                                    <div class="card-body">
+
+                                        <div class="table-responsive">
+
+                                            <table class="data-table"
+                                                   id="payslipDeductionsTable">
+
+                                                <thead>
+
+                                                    <tr>
+
+                                                        <th scope="col">
+                                                            Component
+                                                        </th>
+
+                                                        <th scope="col">
+                                                            Amount
+                                                        </th>
+
+                                                    </tr>
+
+                                                </thead>
+
+                                                <tbody id="payslipDeductionsBody">
+
+                                                    <!-- Firebase deductions -->
+
+                                                </tbody>
+
+                                                <tfoot>
+
+                                                    <tr>
+
+                                                        <th scope="row">
+                                                            Total Deductions
+                                                        </th>
+
+                                                        <td id="slipTotalDeductions"></td>
+
+                                                    </tr>
+
+                                                </tfoot>
+
+                                            </table>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </section>
+
+                        <!-- NET PAY SUMMARY -->
+
+                        <section class="card mt-2"
+                                 aria-labelledby="payslipNetPayHeading">
+
+                            <div class="card-body">
+
+                                <div class="d-flex justify-between align-center flex-wrap gap-2">
+
+                                    <div>
+
+                                        <h3 id="payslipNetPayHeading">
+                                            Net Salary
+                                        </h3>
+
+                                        <p class="text-muted">
+                                            Final payable amount
+                                        </p>
+
+                                    </div>
+
+                                    <h2 class="text-success"
+                                        id="slipNetSalary"></h2>
+
+                                </div>
+
+                                <p class="mt-2">
+
+                                    <strong>Amount in Words:</strong>
+
+                                    <span id="slipAmountInWords"></span>
+
+                                </p>
+
+                            </div>
+
+                        </section>
+
+                        <!-- PAYMENT INFORMATION -->
+
+                        <section class="mt-2"
+                                 id="payslipPaymentSection"
+                                 aria-labelledby="payslipPaymentHeading"
+                                 hidden>
+
+                            <h3 class="mb-2"
+                                id="payslipPaymentHeading">
+
+                                Payment Information
+
+                            </h3>
+
+                            <div class="grid grid-2">
+
+                                <p>
+
+                                    <strong>Payment Date:</strong>
+
+                                    <span id="slipPaymentDate"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Payment Method:</strong>
+
+                                    <span id="slipPaymentMethod"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Amount Paid:</strong>
+
+                                    <span id="slipAmountPaid"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Outstanding Amount:</strong>
+
+                                    <span id="slipOutstandingAmount"></span>
+
+                                </p>
+
+                            </div>
+
+                        </section>
+
+                        <!-- ADDITIONAL CONFIGURED COMPONENTS -->
+
+                        <section class="mt-2"
+                                 id="payslipCustomFieldsSection"
+                                 aria-labelledby="payslipCustomFieldsHeading"
+                                 hidden>
+
+                            <h3 class="mb-2"
+                                id="payslipCustomFieldsHeading">
+
+                                Additional Information
+
+                            </h3>
+
+                            <div id="payslipCustomFields">
+
+                                <!-- Fields configured in Advanced Settings -->
+
+                            </div>
+
+                        </section>
+
+                        <!-- PAYSLIP FOOTER -->
+
+                        <footer class="mt-2">
+
+                            <p class="text-muted"
+                               id="payslipFooterNote"></p>
+
+                            <div id="payslipAuthorisation">
+
+                                <!-- Optional configured authorisation -->
+
+                            </div>
+
+                        </footer>
+
+                    </div>
+
+                </article>
+
+            </div>
+
+            <!-- PREVIEW ACTIONS -->
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="payslipPreviewCloseButton">
+
+                    Close
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="printPayslip"
+                        disabled>
+
+                    Print
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="downloadPayslipPDF"
+                        disabled>
+
+                    Download PDF
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- FULL-PAGE PAYSLIP VIEW -->
+
+    <section class="fullpage-view"
+             id="payslipFullpageView"
+             aria-labelledby="payslipFullpageTitle"
+             hidden>
+
+        <header class="fullpage-header">
+
+            <h2 id="payslipFullpageTitle">
+                Payslip
+            </h2>
+
+            <div class="page-actions">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="fullpagePrintPayslip">
+
+                    Print
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="fullpageDownloadPayslip">
+
+                    Download PDF
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="exitPayslipFullpage">
+
+                    Close Full Page
+
+                </button>
+
+            </div>
+
+        </header>
+
+        <div class="fullpage-body">
+
+            <div class="fullpage-container"
+                 id="payslipFullpageContent">
+
+                <!-- Selected authorised payslip renders here -->
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- UNIVERSAL CONFIRMATION DIALOG -->
+
+    <div class="modal-backdrop"
+         id="confirmBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="confirmTitle"
+                 aria-describedby="confirmMessage">
+
+            <div class="modal-body confirm-dialog">
+
+                <h2 class="confirm-title"
+                    id="confirmTitle">
+
+                    Confirm Action
+
+                </h2>
+
+                <p class="confirm-message"
+                   id="confirmMessage">
+
+                    Are you sure you want to continue?
+
+                </p>
+
+                <div class="confirm-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="confirmCancel">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmProceed">
+
+                        Confirm
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL NOTIFICATION CONTAINER -->
+
+    <div class="toast-container"
+         id="toastContainer"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</body>
+</html>
