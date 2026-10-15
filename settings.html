@@ -1,0 +1,2969 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="robots"
+          content="noindex, nofollow">
+
+    <meta name="description"
+          content="Advanced administrative configuration for the Employee Management and Payroll System.">
+
+    <title>Advanced Settings | Employee Management &amp; Payroll System</title>
+
+    <!-- UNIVERSAL STYLESHEETS -->
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/table.css">
+    <link rel="stylesheet" href="css/filter.css">
+
+    <!-- EXTERNAL JAVASCRIPT -->
+
+    <script src="js/script.js" defer></script>
+    <script src="js/settings.js" defer></script>
+
+</head>
+
+<body class="app-layout"
+      data-page="settings"
+      data-module="settings">
+
+    <!-- MOBILE SIDEBAR BACKDROP -->
+
+    <div class="sidebar-backdrop"
+         id="sidebarBackdrop"
+         aria-hidden="true">
+    </div>
+
+    <!-- UNIVERSAL SIDEBAR -->
+
+    <aside class="sidebar"
+           id="appSidebar">
+
+        <div class="sidebar-header">
+
+            <a href="dashboard.html"
+               class="sidebar-brand">
+
+                <div class="brand-logo">EM</div>
+
+                <div class="brand-text">
+
+                    <h2>Employee Management</h2>
+
+                    <span>Payroll System</span>
+
+                </div>
+
+            </a>
+
+        </div>
+
+        <nav class="sidebar-body"
+             aria-label="Main Navigation">
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Main Menu
+                </div>
+
+                <a href="dashboard.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">01</span>
+                    <span class="nav-label">Dashboard</span>
+
+                </a>
+
+                <a href="employees.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">02</span>
+                    <span class="nav-label">Employees</span>
+
+                </a>
+
+                <a href="attendance.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">03</span>
+                    <span class="nav-label">Attendance</span>
+
+                </a>
+
+                <a href="leave.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">04</span>
+                    <span class="nav-label">Leave Management</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Finance
+                </div>
+
+                <a href="payroll.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">05</span>
+                    <span class="nav-label">Payroll</span>
+
+                </a>
+
+                <a href="payslips.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">06</span>
+                    <span class="nav-label">Payslips</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Management
+                </div>
+
+                <a href="reports.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">07</span>
+                    <span class="nav-label">Reports &amp; Insights</span>
+
+                </a>
+
+                <a href="settings.html"
+                   class="nav-link active"
+                   aria-current="page">
+
+                    <span class="nav-icon">08</span>
+                    <span class="nav-label">Advanced Settings</span>
+
+                </a>
+
+            </div>
+
+            <div class="nav-section">
+
+                <div class="nav-title">
+                    Support
+                </div>
+
+                <a href="faq.html"
+                   class="nav-link">
+
+                    <span class="nav-icon">09</span>
+                    <span class="nav-label">FAQ &amp; Help</span>
+
+                </a>
+
+            </div>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <button type="button"
+                    class="btn btn-secondary btn-block"
+                    id="logoutButton">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </aside>
+
+    <!-- MAIN APPLICATION -->
+
+    <div class="main-wrapper">
+
+        <!-- UNIVERSAL HEADER -->
+
+        <header class="top-header">
+
+            <div class="header-left">
+
+                <button type="button"
+                        class="header-action menu-toggle"
+                        id="menuToggle"
+                        aria-label="Toggle navigation"
+                        aria-controls="appSidebar"
+                        aria-expanded="false">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+
+                    </svg>
+
+                </button>
+
+                <h1 class="header-title">
+                    Advanced Settings
+                </h1>
+
+            </div>
+
+            <div class="header-right">
+
+                <button type="button"
+                        class="header-action"
+                        id="notificationButton"
+                        aria-label="Notifications">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="24"
+                         height="24"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+
+                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+
+                        <path d="M10 21h4"></path>
+
+                    </svg>
+
+                </button>
+
+                <div class="user-menu">
+
+                    <div class="user-avatar"
+                         id="headerUserAvatar"
+                         aria-hidden="true">
+                    </div>
+
+                    <div class="user-details">
+
+                        <strong id="headerUserName"></strong>
+
+                        <small id="headerUserRole"></small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- MAIN CONTENT -->
+
+        <main class="main-content">
+
+            <div class="container-fluid">
+
+                <!-- PAGE HEADING -->
+
+                <div class="page-heading">
+
+                    <div>
+
+                        <h1>Advanced Settings</h1>
+
+                        <p>
+                            Configure company operations, policies,
+                            access permissions and application appearance.
+                        </p>
+
+                    </div>
+
+                    <div class="page-actions">
+
+                        <span class="badge badge-primary"
+                              id="settingsVersion"
+                              hidden>
+                        </span>
+
+                        <button type="button"
+                                class="btn btn-secondary"
+                                id="reloadSettings"
+                                disabled>
+
+                            Refresh Settings
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- INITIAL ACCESS VERIFICATION -->
+
+                <section class="card"
+                         id="settingsLoading"
+                         role="status"
+                         aria-live="polite">
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <div class="loading-spinner"></div>
+
+                            <h3 class="mt-2">
+                                Verifying Administrative Access
+                            </h3>
+
+                            <p>
+                                Checking authentication, permissions
+                                and company configuration.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- ACCESS DENIED -->
+
+                <section class="card"
+                         id="settingsAccessDenied"
+                         role="alert"
+                         hidden>
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <h3>Access Restricted</h3>
+
+                            <p id="settingsAccessMessage">
+                                You do not have permission to access
+                                Advanced Settings.
+                            </p>
+
+                            <a href="dashboard.html"
+                               class="btn btn-secondary mt-2">
+
+                                Return to Dashboard
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- DATABASE ERROR -->
+
+                <section class="card"
+                         id="settingsLoadError"
+                         role="alert"
+                         hidden>
+
+                    <div class="card-body">
+
+                        <div class="empty-state">
+
+                            <h3>Unable to Load Settings</h3>
+
+                            <p id="settingsLoadErrorMessage">
+                                Company settings could not be retrieved.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary mt-2"
+                                    id="retrySettings">
+
+                                Try Again
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- VERIFIED ADMINISTRATIVE WORKSPACE -->
+
+                <div id="settingsWorkspace"
+                     hidden>
+
+                    <!-- SETTINGS STATUS -->
+
+                    <section class="card mb-2"
+                             aria-labelledby="settingsStatusTitle">
+
+                        <div class="card-body">
+
+                            <div class="d-flex justify-between align-center flex-wrap gap-2">
+
+                                <div>
+
+                                    <h3 id="settingsStatusTitle">
+                                        Company Configuration
+                                    </h3>
+
+                                    <p class="text-muted"
+                                       id="settingsLastUpdated"></p>
+
+                                </div>
+
+                                <span class="badge badge-success"
+                                      id="settingsSaveStatus"
+                                      role="status"
+                                      aria-live="polite">
+
+                                    Configuration Loaded
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- SETTINGS NAVIGATION -->
+
+                    <section class="card mb-2"
+                             aria-labelledby="settingsNavigationTitle">
+
+                        <div class="card-header">
+
+                            <h3 id="settingsNavigationTitle">
+                                Configuration Modules
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <nav class="settings-navigation"
+                                 id="settingsNavigation"
+                                 aria-label="Advanced Settings Modules">
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="companySettings">
+
+                                    Company Profile
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="departmentSettings">
+
+                                    Departments &amp; Designations
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="employeeFieldSettings">
+
+                                    Employee Fields
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="attendanceSettings">
+
+                                    Attendance
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="leaveSettings">
+
+                                    Leave Policies
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="payrollSettings">
+
+                                    Payroll Rules
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="templateSettings">
+
+                                    Document Templates
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="permissionSettings">
+
+                                    Roles &amp; Permissions
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="appearanceSettings">
+
+                                    Appearance &amp; Layout
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="notificationSettings">
+
+                                    Notifications
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="auditSettings">
+
+                                    Audit Logs
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        data-settings-target="systemSettings">
+
+                                    System Controls
+
+                                </button>
+
+                            </nav>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 01. COMPANY PROFILE & BRANDING    -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="companySettings"
+                             data-settings-panel
+                             aria-labelledby="companySettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="companySettingsTitle">
+                                Company Profile &amp; Branding
+                            </h3>
+
+                        </div>
+
+                        <form id="companySettingsForm">
+
+                            <div class="card-body">
+
+                                <h3 class="mb-2">
+                                    Organisation Information
+                                </h3>
+
+                                <div class="grid grid-2">
+
+                                    <div class="form-group">
+
+                                        <label for="companyName"
+                                               class="form-label">
+
+                                            Company Name
+
+                                        </label>
+
+                                        <input type="text"
+                                               id="companyName"
+                                               name="companyName"
+                                               class="form-control"
+                                               maxlength="150"
+                                               required>
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="companyShortName"
+                                               class="form-label">
+
+                                            Short Name
+
+                                        </label>
+
+                                        <input type="text"
+                                               id="companyShortName"
+                                               name="shortName"
+                                               class="form-control"
+                                               maxlength="40">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="companyEmail"
+                                               class="form-label">
+
+                                            Official Email
+
+                                        </label>
+
+                                        <input type="email"
+                                               id="companyEmail"
+                                               name="email"
+                                               class="form-control"
+                                               maxlength="254">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="companyPhone"
+                                               class="form-label">
+
+                                            Contact Number
+
+                                        </label>
+
+                                        <input type="tel"
+                                               id="companyPhone"
+                                               name="phone"
+                                               class="form-control"
+                                               maxlength="20">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="companyWebsite"
+                                               class="form-label">
+
+                                            Website
+
+                                        </label>
+
+                                        <input type="url"
+                                               id="companyWebsite"
+                                               name="website"
+                                               class="form-control"
+                                               maxlength="255">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="companyCurrency"
+                                               class="form-label">
+
+                                            Currency
+
+                                        </label>
+
+                                        <select id="companyCurrency"
+                                                name="currency"
+                                                class="form-control"
+                                                required>
+
+                                            <option value=""
+                                                    selected
+                                                    disabled>
+
+                                                Select Currency
+
+                                            </option>
+
+                                            <!-- Supported currencies -->
+
+                                        </select>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label for="companyAddress"
+                                           class="form-label">
+
+                                        Official Address
+
+                                    </label>
+
+                                    <textarea id="companyAddress"
+                                              name="address"
+                                              class="form-control"
+                                              maxlength="500"></textarea>
+
+                                </div>
+
+                                <h3 class="mb-2">
+                                    Branding
+                                </h3>
+
+                                <div class="grid grid-2">
+
+                                    <div class="form-group">
+
+                                        <label for="companyLogo"
+                                               class="form-label">
+
+                                            Company Logo
+
+                                        </label>
+
+                                        <input type="file"
+                                               id="companyLogo"
+                                               name="logo"
+                                               class="form-control"
+                                               accept="image/png,image/jpeg,image/webp">
+
+                                        <p class="form-help">
+                                            Uploads must be validated before
+                                            storage.
+                                        </p>
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="companyFavicon"
+                                               class="form-label">
+
+                                            Application Icon
+
+                                        </label>
+
+                                        <input type="file"
+                                               id="companyFavicon"
+                                               name="favicon"
+                                               class="form-control"
+                                               accept="image/png,image/x-icon,image/vnd.microsoft.icon">
+
+                                    </div>
+
+                                </div>
+
+                                <div id="companyLogoPreview"
+                                     aria-label="Current company logo">
+                                </div>
+
+                                <div class="form-error"
+                                     id="companySettingsError"
+                                     role="alert"
+                                     hidden>
+                                </div>
+
+                            </div>
+
+                            <div class="card-footer">
+
+                                <div class="form-actions">
+
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            id="resetCompanySettings">
+
+                                        Discard Changes
+
+                                    </button>
+
+                                    <button type="submit"
+                                            class="btn btn-primary"
+                                            id="saveCompanySettings">
+
+                                        Save Company Profile
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </form>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 02. DEPARTMENTS & DESIGNATIONS   -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="departmentSettings"
+                             data-settings-panel
+                             aria-labelledby="departmentSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="departmentSettingsTitle">
+                                Departments &amp; Designations
+                            </h3>
+
+                            <button type="button"
+                                    class="btn btn-primary btn-sm"
+                                    id="addDepartmentButton">
+
+                                Add Department
+
+                            </button>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <h3 class="mb-2">
+                                Departments
+                            </h3>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="departmentSettingsTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Department</th>
+                                            <th scope="col">Description</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="departmentSettingsBody">
+
+                                        <!-- Firebase departments -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <div class="empty-state"
+                                 id="departmentsEmpty"
+                                 hidden>
+
+                                <h3>No Departments Configured</h3>
+
+                                <p>
+                                    Create departments to organise
+                                    employee records.
+                                </p>
+
+                            </div>
+
+                            <div class="d-flex justify-between align-center flex-wrap gap-2 mt-2">
+
+                                <h3>Designations</h3>
+
+                                <button type="button"
+                                        class="btn btn-primary btn-sm"
+                                        id="addDesignationButton">
+
+                                    Add Designation
+
+                                </button>
+
+                            </div>
+
+                            <div class="table-responsive mt-2">
+
+                                <table class="data-table"
+                                       id="designationSettingsTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Designation</th>
+                                            <th scope="col">Department</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="designationSettingsBody">
+
+                                        <!-- Firebase designations -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <div class="empty-state"
+                                 id="designationsEmpty"
+                                 hidden>
+
+                                <h3>No Designations Configured</h3>
+
+                                <p>
+                                    Add designations according to
+                                    company requirements.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 03. EMPLOYEE FIELD CONFIGURATION -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="employeeFieldSettings"
+                             data-settings-panel
+                             aria-labelledby="employeeFieldSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="employeeFieldSettingsTitle">
+                                Employee Field Configuration
+                            </h3>
+
+                            <button type="button"
+                                    class="btn btn-primary btn-sm"
+                                    id="addEmployeeField">
+
+                                Add Custom Field
+
+                            </button>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p class="text-muted mb-2">
+                                Configure supported employee profile
+                                fields without modifying source code.
+                                Protected system identifiers cannot
+                                be removed or redefined.
+                            </p>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="employeeFieldsTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Field Label</th>
+                                            <th scope="col">Data Type</th>
+                                            <th scope="col">Required</th>
+                                            <th scope="col">Visibility</th>
+                                            <th scope="col">Order</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="employeeFieldsBody">
+
+                                        <!-- Configured employee fields -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <div class="form-actions mt-2">
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        id="previewEmployeeFields">
+
+                                    Preview Form
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-primary"
+                                        id="publishEmployeeFields"
+                                        disabled>
+
+                                    Publish Changes
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 04. ATTENDANCE SETTINGS          -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="attendanceSettings"
+                             data-settings-panel
+                             aria-labelledby="attendanceSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="attendanceSettingsTitle">
+                                Attendance &amp; Working Hours
+                            </h3>
+
+                        </div>
+
+                        <form id="attendanceSettingsForm">
+
+                            <div class="card-body">
+
+                                <div class="grid grid-2">
+
+                                    <div class="form-group">
+
+                                        <label for="workStartTime"
+                                               class="form-label">
+
+                                            Standard Start Time
+
+                                        </label>
+
+                                        <input type="time"
+                                               id="workStartTime"
+                                               name="startTime"
+                                               class="form-control"
+                                               required>
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="workEndTime"
+                                               class="form-label">
+
+                                            Standard End Time
+
+                                        </label>
+
+                                        <input type="time"
+                                               id="workEndTime"
+                                               name="endTime"
+                                               class="form-control"
+                                               required>
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="attendanceGracePeriod"
+                                               class="form-label">
+
+                                            Grace Period (Minutes)
+
+                                        </label>
+
+                                        <input type="number"
+                                               id="attendanceGracePeriod"
+                                               name="gracePeriod"
+                                               class="form-control"
+                                               min="0"
+                                               step="1">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="attendanceBreakMinutes"
+                                               class="form-label">
+
+                                            Standard Break (Minutes)
+
+                                        </label>
+
+                                        <input type="number"
+                                               id="attendanceBreakMinutes"
+                                               name="breakMinutes"
+                                               class="form-control"
+                                               min="0"
+                                               step="1">
+
+                                    </div>
+
+                                </div>
+
+                                <h3 class="mb-2">
+                                    Working Days
+                                </h3>
+
+                                <div class="checkbox-group"
+                                     id="workingDaysContainer">
+
+                                    <!-- Configured working-day controls -->
+
+                                </div>
+
+                                <h3 class="mb-2 mt-2">
+                                    Attendance Policies
+                                </h3>
+
+                                <div id="attendancePolicyContainer">
+
+                                    <!-- Editable validated policy controls -->
+
+                                </div>
+
+                                <div class="form-error"
+                                     id="attendanceSettingsError"
+                                     role="alert"
+                                     hidden>
+                                </div>
+
+                            </div>
+
+                            <div class="card-footer">
+
+                                <div class="form-actions">
+
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            id="resetAttendanceSettings">
+
+                                        Discard Changes
+
+                                    </button>
+
+                                    <button type="submit"
+                                            class="btn btn-primary">
+
+                                        Save Attendance Settings
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </form>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 05. LEAVE POLICIES                -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="leaveSettings"
+                             data-settings-panel
+                             aria-labelledby="leaveSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="leaveSettingsTitle">
+                                Leave Policies
+                            </h3>
+
+                            <button type="button"
+                                    class="btn btn-primary btn-sm"
+                                    id="addLeaveType">
+
+                                Add Leave Type
+
+                            </button>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p class="text-muted mb-2">
+                                Configure leave entitlements,
+                                eligibility, carry-forward rules
+                                and approval requirements.
+                            </p>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="leaveTypeSettingsTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Leave Type</th>
+                                            <th scope="col">Entitlement</th>
+                                            <th scope="col">Paid / Unpaid</th>
+                                            <th scope="col">Carry Forward</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="leaveTypeSettingsBody">
+
+                                        <!-- Firebase leave policies -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <div class="empty-state"
+                                 id="leaveTypesEmpty"
+                                 hidden>
+
+                                <h3>No Leave Types Configured</h3>
+
+                                <p>
+                                    Create leave types before
+                                    processing leave applications.
+                                </p>
+
+                            </div>
+
+                            <h3 class="mt-2 mb-2">
+                                Approval Policies
+                            </h3>
+
+                            <div id="leaveApprovalPolicyContainer">
+
+                                <!-- Configured approval policies -->
+
+                            </div>
+
+                            <h3 class="mt-2 mb-2">
+                                Company Holidays
+                            </h3>
+
+                            <div class="page-actions mb-2">
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        id="addHolidayButton">
+
+                                    Add Holiday
+
+                                </button>
+
+                            </div>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="holidaySettingsTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Holiday</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Category</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="holidaySettingsBody">
+
+                                        <!-- Company holidays -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 06. PAYROLL RULES                 -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="payrollSettings"
+                             data-settings-panel
+                             aria-labelledby="payrollSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="payrollSettingsTitle">
+                                Payroll &amp; Salary Rules
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p class="text-muted mb-2">
+                                Payroll calculations are based on
+                                approved configuration versions.
+                                Changes must not silently modify
+                                finalised historical payroll.
+                            </p>
+
+                            <!-- PAYROLL CONFIGURATION -->
+
+                            <form id="payrollSettingsForm">
+
+                                <h3 class="mb-2">
+                                    General Payroll Configuration
+                                </h3>
+
+                                <div class="grid grid-2">
+
+                                    <div class="form-group">
+
+                                        <label for="payrollFrequency"
+                                               class="form-label">
+
+                                            Payroll Frequency
+
+                                        </label>
+
+                                        <select id="payrollFrequency"
+                                                name="frequency"
+                                                class="form-control"
+                                                required>
+
+                                            <option value=""
+                                                    selected
+                                                    disabled>
+
+                                                Select Frequency
+
+                                            </option>
+
+                                            <option value="monthly">Monthly</option>
+                                            <option value="weekly">Weekly</option>
+                                            <option value="biweekly">Biweekly</option>
+
+                                        </select>
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="payrollPaymentDay"
+                                               class="form-label">
+
+                                            Scheduled Payment Day
+
+                                        </label>
+
+                                        <input type="number"
+                                               id="payrollPaymentDay"
+                                               name="paymentDay"
+                                               class="form-control"
+                                               min="1"
+                                               max="31"
+                                               step="1">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="payrollRounding"
+                                               class="form-label">
+
+                                            Rounding Method
+
+                                        </label>
+
+                                        <select id="payrollRounding"
+                                                name="rounding"
+                                                class="form-control"
+                                                required>
+
+                                            <option value=""
+                                                    selected
+                                                    disabled>
+
+                                                Select Rounding Method
+
+                                            </option>
+
+                                            <option value="none">No Additional Rounding</option>
+                                            <option value="nearest">Nearest Whole Unit</option>
+                                            <option value="up">Round Up</option>
+                                            <option value="down">Round Down</option>
+
+                                        </select>
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="payrollEffectiveDate"
+                                               class="form-label">
+
+                                            Policy Effective Date
+
+                                        </label>
+
+                                        <input type="date"
+                                               id="payrollEffectiveDate"
+                                               name="effectiveDate"
+                                               class="form-control"
+                                               required>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="form-error"
+                                     id="payrollSettingsError"
+                                     role="alert"
+                                     hidden>
+                                </div>
+
+                                <div class="form-actions">
+
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            id="previewPayrollPolicy">
+
+                                        Preview Impact
+
+                                    </button>
+
+                                    <button type="submit"
+                                            class="btn btn-primary">
+
+                                        Save Payroll Policy
+
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                            <!-- SALARY COMPONENTS -->
+
+                            <div class="d-flex justify-between align-center flex-wrap gap-2 mt-2 mb-2">
+
+                                <h3>Salary Components</h3>
+
+                                <button type="button"
+                                        class="btn btn-primary btn-sm"
+                                        id="addSalaryComponent">
+
+                                    Add Component
+
+                                </button>
+
+                            </div>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="salaryComponentTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Component</th>
+                                            <th scope="col">Category</th>
+                                            <th scope="col">Calculation</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="salaryComponentBody">
+
+                                        <!-- Configured salary components -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <!-- PAYROLL CALCULATION RULES -->
+
+                            <h3 class="mt-2 mb-2">
+                                Calculation Rules
+                            </h3>
+
+                            <div id="payrollCalculationRules">
+
+                                <!-- Validated calculation configuration -->
+
+                            </div>
+
+                            <!-- PAYROLL APPROVAL WORKFLOW -->
+
+                            <h3 class="mt-2 mb-2">
+                                Approval &amp; Finalisation
+                            </h3>
+
+                            <div id="payrollApprovalRules">
+
+                                <!-- Configured approval requirements -->
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 07. DOCUMENT TEMPLATE SETTINGS   -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="templateSettings"
+                             data-settings-panel
+                             aria-labelledby="templateSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="templateSettingsTitle">
+                                Payslip &amp; Document Templates
+                            </h3>
+
+                            <button type="button"
+                                    class="btn btn-primary btn-sm"
+                                    id="createDocumentTemplate">
+
+                                Create Template
+
+                            </button>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p class="text-muted mb-2">
+                                Configure approved template components,
+                                company branding, labels, field visibility
+                                and document layout without editing HTML.
+                            </p>
+
+                            <div class="form-group">
+
+                                <label for="documentTemplateType"
+                                       class="form-label">
+
+                                    Document Type
+
+                                </label>
+
+                                <select id="documentTemplateType"
+                                        class="form-control">
+
+                                    <option value=""
+                                            selected
+                                            disabled>
+
+                                        Select Document Type
+
+                                    </option>
+
+                                    <option value="payslip">Payslip</option>
+                                    <option value="employee_report">Employee Report</option>
+                                    <option value="attendance_report">Attendance Report</option>
+                                    <option value="leave_report">Leave Report</option>
+                                    <option value="payroll_report">Payroll Report</option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="documentTemplateTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Template Name</th>
+                                            <th scope="col">Document Type</th>
+                                            <th scope="col">Version</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="documentTemplateBody">
+
+                                        <!-- Saved document templates -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <div class="empty-state"
+                                 id="documentTemplatesEmpty"
+                                 hidden>
+
+                                <h3>No Templates Available</h3>
+
+                                <p>
+                                    Available templates will appear here.
+                                </p>
+
+                            </div>
+
+                            <!-- TEMPLATE EDITOR -->
+
+                            <div id="documentTemplateEditor"
+                                 hidden>
+
+                                <h3 class="mt-2 mb-2">
+                                    Template Editor
+                                </h3>
+
+                                <form id="documentTemplateForm">
+
+                                    <input type="hidden"
+                                           id="documentTemplateId"
+                                           name="templateId">
+
+                                    <div class="grid grid-2">
+
+                                        <div class="form-group">
+
+                                            <label for="documentTemplateName"
+                                                   class="form-label">
+
+                                                Template Name
+
+                                            </label>
+
+                                            <input type="text"
+                                                   id="documentTemplateName"
+                                                   name="name"
+                                                   class="form-control"
+                                                   maxlength="100"
+                                                   required>
+
+                                        </div>
+
+                                        <div class="form-group">
+
+                                            <label for="documentPageSize"
+                                                   class="form-label">
+
+                                                Paper Size
+
+                                            </label>
+
+                                            <select id="documentPageSize"
+                                                    name="pageSize"
+                                                    class="form-control"
+                                                    required>
+
+                                                <option value=""
+                                                        selected
+                                                        disabled>
+
+                                                    Select Paper Size
+
+                                                </option>
+
+                                                <option value="a4">A4</option>
+                                                <option value="letter">Letter</option>
+
+                                            </select>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div id="documentTemplateFields">
+
+                                        <!-- Supported template components -->
+
+                                    </div>
+
+                                    <div class="form-error"
+                                         id="documentTemplateError"
+                                         role="alert"
+                                         hidden>
+                                    </div>
+
+                                    <div class="form-actions mt-2">
+
+                                        <button type="button"
+                                                class="btn btn-secondary"
+                                                id="previewDocumentTemplate">
+
+                                            Preview
+
+                                        </button>
+
+                                        <button type="submit"
+                                                class="btn btn-primary">
+
+                                            Save Draft
+
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-success"
+                                                id="publishDocumentTemplate"
+                                                disabled>
+
+                                            Publish Template
+
+                                        </button>
+
+                                    </div>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 08. ROLES & PERMISSIONS           -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="permissionSettings"
+                             data-settings-panel
+                             aria-labelledby="permissionSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="permissionSettingsTitle">
+                                Roles &amp; Permissions
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p class="text-muted mb-2">
+                                Access is verified through authenticated
+                                user identity and protected role assignments.
+                                Editing visible controls alone cannot
+                                grant additional permissions.
+                            </p>
+
+                            <h3 class="mb-2">
+                                Role Configuration
+                            </h3>
+
+                            <div class="form-group">
+
+                                <label for="permissionRole"
+                                       class="form-label">
+
+                                    Select Role
+
+                                </label>
+
+                                <select id="permissionRole"
+                                        class="form-control">
+
+                                    <option value=""
+                                            selected
+                                            disabled>
+
+                                        Select Role
+
+                                    </option>
+
+                                    <!-- Authorised configurable roles -->
+
+                                </select>
+
+                            </div>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="permissionMatrixTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Module</th>
+                                            <th scope="col">View</th>
+                                            <th scope="col">Create</th>
+                                            <th scope="col">Edit</th>
+                                            <th scope="col">Delete</th>
+                                            <th scope="col">Approve</th>
+                                            <th scope="col">Export</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="permissionMatrixBody">
+
+                                        <!-- Server-supported permissions -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <div class="form-error"
+                                 id="permissionSettingsError"
+                                 role="alert"
+                                 hidden>
+                            </div>
+
+                            <div class="form-actions mt-2">
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        id="discardPermissionChanges">
+
+                                    Discard Changes
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-primary"
+                                        id="savePermissionChanges"
+                                        disabled>
+
+                                    Review Permission Changes
+
+                                </button>
+
+                            </div>
+
+                            <h3 class="mt-2 mb-2">
+                                User Role Assignments
+                            </h3>
+
+                            <div class="filter-bar">
+
+                                <div class="filter-search">
+
+                                    <label for="roleAssignmentSearch"
+                                           class="form-label">
+
+                                        Search Users
+
+                                    </label>
+
+                                    <input type="search"
+                                           id="roleAssignmentSearch"
+                                           class="form-control"
+                                           placeholder="Search authorised user"
+                                           autocomplete="off">
+
+                                </div>
+
+                            </div>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="roleAssignmentsTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">User</th>
+                                            <th scope="col">Assigned Role</th>
+                                            <th scope="col">Account Status</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="roleAssignmentsBody">
+
+                                        <!-- Protected role assignment records -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 09. APPEARANCE & LAYOUT           -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="appearanceSettings"
+                             data-settings-panel
+                             aria-labelledby="appearanceSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="appearanceSettingsTitle">
+                                Appearance &amp; Layout
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <form id="appearanceSettingsForm">
+
+                                <h3 class="mb-2">
+                                    Application Appearance
+                                </h3>
+
+                                <div class="grid grid-2">
+
+                                    <div class="form-group">
+
+                                        <label for="appearancePrimaryColor"
+                                               class="form-label">
+
+                                            Primary Colour
+
+                                        </label>
+
+                                        <input type="color"
+                                               id="appearancePrimaryColor"
+                                               name="primaryColor"
+                                               class="form-control">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="appearanceBackgroundColor"
+                                               class="form-label">
+
+                                            Background Colour
+
+                                        </label>
+
+                                        <input type="color"
+                                               id="appearanceBackgroundColor"
+                                               name="backgroundColor"
+                                               class="form-control">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="appearanceSurfaceColor"
+                                               class="form-label">
+
+                                            Surface Colour
+
+                                        </label>
+
+                                        <input type="color"
+                                               id="appearanceSurfaceColor"
+                                               name="surfaceColor"
+                                               class="form-control">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="appearanceTextColor"
+                                               class="form-label">
+
+                                            Text Colour
+
+                                        </label>
+
+                                        <input type="color"
+                                               id="appearanceTextColor"
+                                               name="textColor"
+                                               class="form-control">
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="appearanceFont"
+                                               class="form-label">
+
+                                            Font Family
+
+                                        </label>
+
+                                        <select id="appearanceFont"
+                                                name="fontFamily"
+                                                class="form-control">
+
+                                            <option value=""
+                                                    selected
+                                                    disabled>
+
+                                                Select Font
+
+                                            </option>
+
+                                            <!-- Supported safe font presets -->
+
+                                        </select>
+
+                                    </div>
+
+                                    <div class="form-group">
+
+                                        <label for="appearanceDensity"
+                                               class="form-label">
+
+                                            Interface Density
+
+                                        </label>
+
+                                        <select id="appearanceDensity"
+                                                name="density"
+                                                class="form-control">
+
+                                            <option value=""
+                                                    selected
+                                                    disabled>
+
+                                                Select Density
+
+                                            </option>
+
+                                            <option value="compact">Compact</option>
+                                            <option value="comfortable">Comfortable</option>
+                                            <option value="spacious">Spacious</option>
+
+                                        </select>
+
+                                    </div>
+
+                                </div>
+
+                                <h3 class="mt-2 mb-2">
+                                    Interface Labels
+                                </h3>
+
+                                <div id="interfaceLabelsContainer">
+
+                                    <!-- Configurable supported labels -->
+
+                                </div>
+
+                                <h3 class="mt-2 mb-2">
+                                    Navigation &amp; Module Layout
+                                </h3>
+
+                                <div id="layoutConfigurationContainer">
+
+                                    <!--
+                                        Supported configurable modules:
+                                        visibility, label and ordering.
+                                        Mandatory system navigation remains protected.
+                                    -->
+
+                                </div>
+
+                                <h3 class="mt-2 mb-2">
+                                    Live Preview
+                                </h3>
+
+                                <div class="card"
+                                     id="appearancePreview">
+
+                                    <div class="card-body">
+
+                                        <!-- Safe rendered appearance preview -->
+
+                                    </div>
+
+                                </div>
+
+                                <div class="form-error mt-2"
+                                     id="appearanceSettingsError"
+                                     role="alert"
+                                     hidden>
+                                </div>
+
+                                <div class="form-actions mt-2">
+
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            id="restoreAppearanceDraft">
+
+                                        Discard Changes
+
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-secondary"
+                                            id="previewAppearance">
+
+                                        Preview Changes
+
+                                    </button>
+
+                                    <button type="submit"
+                                            class="btn btn-primary">
+
+                                        Review &amp; Publish
+
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 10. NOTIFICATIONS                 -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="notificationSettings"
+                             data-settings-panel
+                             aria-labelledby="notificationSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="notificationSettingsTitle">
+                                Notifications &amp; Announcements
+                            </h3>
+
+                            <button type="button"
+                                    class="btn btn-primary btn-sm"
+                                    id="createAnnouncement">
+
+                                Create Announcement
+
+                            </button>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <h3 class="mb-2">
+                                Notification Preferences
+                            </h3>
+
+                            <form id="notificationSettingsForm">
+
+                                <div id="notificationPreferencesContainer">
+
+                                    <!-- Available notification preferences -->
+
+                                </div>
+
+                                <div class="form-error"
+                                     id="notificationSettingsError"
+                                     role="alert"
+                                     hidden>
+                                </div>
+
+                                <div class="form-actions mt-2">
+
+                                    <button type="submit"
+                                            class="btn btn-primary">
+
+                                        Save Preferences
+
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                            <h3 class="mt-2 mb-2">
+                                Announcements
+                            </h3>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="announcementSettingsTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Title</th>
+                                            <th scope="col">Audience</th>
+                                            <th scope="col">Published On</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="announcementSettingsBody">
+
+                                        <!-- Firebase announcements -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 11. AUDIT LOGS                    -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="auditSettings"
+                             data-settings-panel
+                             aria-labelledby="auditSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="auditSettingsTitle">
+                                System Audit Logs
+                            </h3>
+
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm"
+                                    id="exportAuditLogs">
+
+                                Export Logs
+
+                            </button>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p class="text-muted mb-2">
+                                Review recorded administrative actions,
+                                configuration changes and protected
+                                system operations.
+                            </p>
+
+                            <form id="auditFilterForm"
+                                  class="filter-bar"
+                                  role="search">
+
+                                <div class="filter-search">
+
+                                    <label for="auditSearch"
+                                           class="form-label">
+
+                                        Search Logs
+
+                                    </label>
+
+                                    <input type="search"
+                                           id="auditSearch"
+                                           class="form-control"
+                                           placeholder="Search event or user"
+                                           autocomplete="off">
+
+                                </div>
+
+                                <div class="filter-item">
+
+                                    <label for="auditStartDate"
+                                           class="form-label">
+
+                                        From Date
+
+                                    </label>
+
+                                    <input type="date"
+                                           id="auditStartDate"
+                                           class="form-control">
+
+                                </div>
+
+                                <div class="filter-item">
+
+                                    <label for="auditEndDate"
+                                           class="form-label">
+
+                                        To Date
+
+                                    </label>
+
+                                    <input type="date"
+                                           id="auditEndDate"
+                                           class="form-control">
+
+                                </div>
+
+                                <div class="filter-actions">
+
+                                    <button type="submit"
+                                            class="btn btn-primary">
+
+                                        Apply
+
+                                    </button>
+
+                                    <button type="reset"
+                                            class="btn btn-secondary">
+
+                                        Reset
+
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                            <div class="table-responsive">
+
+                                <table class="data-table"
+                                       id="auditLogTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Date &amp; Time</th>
+                                            <th scope="col">User</th>
+                                            <th scope="col">Event</th>
+                                            <th scope="col">Module</th>
+                                            <th scope="col">Result</th>
+                                            <th scope="col">Details</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="auditLogBody">
+
+                                        <!-- Protected append-only audit records -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <div class="empty-state"
+                                 id="auditLogsEmpty"
+                                 hidden>
+
+                                <h3>No Matching Audit Records</h3>
+
+                                <p>
+                                    No audit events match the selected filters.
+                                </p>
+
+                            </div>
+
+                            <div class="table-pagination"
+                                 id="auditPagination">
+
+                                <span id="auditPaginationInfo">
+                                    Showing 0 of 0 records
+                                </span>
+
+                                <div class="pagination-actions">
+
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm"
+                                            id="auditPrevPage"
+                                            disabled>
+
+                                        Previous
+
+                                    </button>
+
+                                    <span id="auditCurrentPage">
+                                        Page 1
+                                    </span>
+
+                                    <button type="button"
+                                            class="btn btn-secondary btn-sm"
+                                            id="auditNextPage"
+                                            disabled>
+
+                                        Next
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <!-- ================================= -->
+                    <!-- 12. SYSTEM CONTROLS               -->
+                    <!-- ================================= -->
+
+                    <section class="card mb-2"
+                             id="systemSettings"
+                             data-settings-panel
+                             aria-labelledby="systemSettingsTitle"
+                             hidden>
+
+                        <div class="card-header">
+
+                            <h3 id="systemSettingsTitle">
+                                Backup, Restore &amp; System Controls
+                            </h3>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <!-- SYSTEM STATUS -->
+
+                            <h3 class="mb-2">
+                                System Information
+                            </h3>
+
+                            <div class="grid grid-2">
+
+                                <p>
+
+                                    <strong>Configuration Version:</strong>
+
+                                    <span id="systemConfigurationVersion"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Last Published:</strong>
+
+                                    <span id="systemLastPublished"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Last Backup:</strong>
+
+                                    <span id="systemLastBackup"></span>
+
+                                </p>
+
+                                <p>
+
+                                    <strong>Backup Status:</strong>
+
+                                    <span id="systemBackupStatus"></span>
+
+                                </p>
+
+                            </div>
+
+                            <!-- BACKUP -->
+
+                            <h3 class="mt-2 mb-2">
+                                Configuration Backup
+                            </h3>
+
+                            <p class="text-muted">
+                                Create a protected backup of supported
+                                system configuration. Backup operations
+                                must execute through authorised backend
+                                services, not direct unrestricted
+                                browser database exports.
+                            </p>
+
+                            <div class="form-actions mt-2">
+
+                                <button type="button"
+                                        class="btn btn-primary"
+                                        id="createSettingsBackup">
+
+                                    Create Backup
+
+                                </button>
+
+                                <button type="button"
+                                        class="btn btn-secondary"
+                                        id="viewSettingsBackups">
+
+                                    Backup History
+
+                                </button>
+
+                            </div>
+
+                            <div class="table-responsive mt-2">
+
+                                <table class="data-table"
+                                       id="settingsBackupTable">
+
+                                    <thead>
+
+                                        <tr>
+
+                                            <th scope="col">Backup ID</th>
+                                            <th scope="col">Created On</th>
+                                            <th scope="col">Created By</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Actions</th>
+
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="settingsBackupBody">
+
+                                        <!-- Protected backup metadata -->
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <!-- RESTORE -->
+
+                            <h3 class="mt-2 mb-2">
+                                Configuration Recovery
+                            </h3>
+
+                            <p class="text-muted">
+                                Restore operations require validation,
+                                an authorised recovery point and explicit
+                                confirmation. Active records must not
+                                be silently overwritten.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary"
+                                    id="openRestoreSettings"
+                                    disabled>
+
+                                Review Restore Options
+
+                            </button>
+
+                            <!-- SAFE DEFAULTS -->
+
+                            <h3 class="mt-2 mb-2">
+                                Safe Configuration Defaults
+                            </h3>
+
+                            <p class="text-muted">
+                                Restore supported appearance or layout
+                                settings without deleting company,
+                                employee or payroll records.
+                            </p>
+
+                            <button type="button"
+                                    class="btn btn-secondary"
+                                    id="restoreSafeDefaults">
+
+                                Review Safe Defaults
+
+                            </button>
+
+                            <!-- SECURITY INFORMATION -->
+
+                            <h3 class="mt-2 mb-2">
+                                Security Configuration
+                            </h3>
+
+                            <div class="card">
+
+                                <div class="card-body">
+
+                                    <p>
+                                        Private API keys, service-account
+                                        credentials, tokens and passwords
+                                        are managed exclusively through
+                                        secure backend infrastructure.
+                                    </p>
+
+                                    <p class="text-muted mt-2">
+                                        Secret values are never displayed,
+                                        edited or returned through this
+                                        application interface.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div class="form-error mt-2"
+                                 id="systemSettingsError"
+                                 role="alert"
+                                 hidden>
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- UNIVERSAL FOOTER -->
+
+        <footer class="app-footer">
+
+            <span>
+                Employee Management &amp; Payroll System
+            </span>
+
+            <span>
+                Designed and Developed by Yadav Web Technologies
+            </span>
+
+        </footer>
+
+    </div>
+
+    <!-- ================================= -->
+    <!-- UNIVERSAL SETTINGS EDITOR MODAL   -->
+    <!-- ================================= -->
+
+    <div class="modal-backdrop"
+         id="settingsEditorBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="settingsEditorTitle">
+
+            <div class="modal-header">
+
+                <h2 id="settingsEditorTitle">
+                    Edit Configuration
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeSettingsEditor"
+                        aria-label="Close configuration editor">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <form id="settingsEditorForm">
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="settingsEditorModule"
+                           name="module">
+
+                    <input type="hidden"
+                           id="settingsEditorRecordId"
+                           name="recordId">
+
+                    <div id="settingsEditorFields">
+
+                        <!--
+                            Validated form fields generated from
+                            the selected supported configuration schema.
+                        -->
+
+                    </div>
+
+                    <div class="form-error"
+                         id="settingsEditorError"
+                         role="alert"
+                         hidden>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="cancelSettingsEditor">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="submit"
+                            class="btn btn-primary"
+                            id="saveSettingsEditor">
+
+                        Save Changes
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </div>
+
+    <!-- ================================= -->
+    <!-- CONFIGURATION PREVIEW MODAL       -->
+    <!-- ================================= -->
+
+    <div class="modal-backdrop"
+         id="settingsPreviewBackdrop"
+         hidden>
+
+        <section class="modal modal-xl"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="settingsPreviewTitle">
+
+            <div class="modal-header">
+
+                <h2 id="settingsPreviewTitle">
+                    Configuration Preview
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeSettingsPreview"
+                        aria-label="Close configuration preview">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <div class="modal-body"
+                 id="settingsPreviewContent">
+
+                <!-- Safe configuration preview -->
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="settingsPreviewCloseButton">
+
+                    Close Preview
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- ================================= -->
+    <!-- CHANGE REVIEW & PUBLISH MODAL     -->
+    <!-- ================================= -->
+
+    <div class="modal-backdrop"
+         id="settingsPublishBackdrop"
+         hidden>
+
+        <section class="modal modal-lg"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="settingsPublishTitle">
+
+            <div class="modal-header">
+
+                <h2 id="settingsPublishTitle">
+                    Review Configuration Changes
+                </h2>
+
+                <button type="button"
+                        class="modal-close"
+                        id="closeSettingsPublish"
+                        aria-label="Close change review">
+
+                    &times;
+
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <p class="mb-2">
+                    Review the proposed changes before publishing.
+                </p>
+
+                <div id="settingsChangeSummary">
+
+                    <!-- Actual validated change summary -->
+
+                </div>
+
+                <div class="form-error mt-2"
+                     id="settingsPublishError"
+                     role="alert"
+                     hidden>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        id="cancelSettingsPublish">
+
+                    Cancel
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="confirmSettingsPublish"
+                        disabled>
+
+                    Publish Changes
+
+                </button>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- ================================= -->
+    <!-- UNIVERSAL CONFIRMATION DIALOG     -->
+    <!-- ================================= -->
+
+    <div class="modal-backdrop"
+         id="confirmBackdrop"
+         hidden>
+
+        <section class="modal"
+                 role="alertdialog"
+                 aria-modal="true"
+                 aria-labelledby="confirmTitle"
+                 aria-describedby="confirmMessage">
+
+            <div class="modal-body confirm-dialog">
+
+                <h2 class="confirm-title"
+                    id="confirmTitle">
+
+                    Confirm Action
+
+                </h2>
+
+                <p class="confirm-message"
+                   id="confirmMessage">
+
+                    Are you sure you want to continue?
+
+                </p>
+
+                <div class="confirm-actions">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            id="confirmCancel">
+
+                        Cancel
+
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmProceed">
+
+                        Confirm
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <!-- UNIVERSAL NOTIFICATION CONTAINER -->
+
+    <div class="toast-container"
+         id="toastContainer"
+         role="status"
+         aria-live="polite">
+    </div>
+
+</body>
+</html>
