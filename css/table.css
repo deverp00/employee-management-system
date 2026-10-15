@@ -1,0 +1,749 @@
+/* =========================================================
+   EMPLOYEE MANAGEMENT & PAYROLL SYSTEM
+   FILE: css/table.css
+
+   PURPOSE:
+   Universal responsive table and pagination styling.
+
+   DEPENDENCIES:
+   css/style.css
+
+   RULES:
+   - Table-related selectors only.
+   - No duplicated universal component definitions.
+   - No inline styling required.
+   - Firebase-generated rows use the same structure.
+========================================================= */
+
+
+/* =========================================================
+   01. RESPONSIVE TABLE CONTAINER
+========================================================= */
+
+.table-responsive {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: var(--radius);
+}
+
+
+/* =========================================================
+   02. UNIVERSAL DATA TABLE
+========================================================= */
+
+.data-table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-family);
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: left;
+}
+
+.data-table caption {
+    padding: 12px 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: left;
+}
+
+.data-table thead {
+    background: var(--surface-alt);
+}
+
+.data-table th,
+.data-table td {
+    padding: 13px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+    overflow-wrap: anywhere;
+}
+
+.data-table th {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: 0.35px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.data-table td {
+    color: var(--text);
+    font-weight: 400;
+}
+
+.data-table tbody tr {
+    transition: background-color var(--transition);
+}
+
+.data-table tbody tr:hover {
+    background: var(--surface-alt);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   03. TABLE CONTENT
+========================================================= */
+
+.data-table td strong {
+    display: inline-block;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.data-table td small {
+    display: block;
+    margin-top: 3px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.data-table td a:not(.btn) {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.data-table td a:not(.btn):hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.data-table td .badge {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+}
+
+.data-table td .btn {
+    vertical-align: middle;
+}
+
+.data-table td time {
+    white-space: nowrap;
+}
+
+.data-table td[data-type="currency"],
+.data-table th[data-type="currency"],
+.data-table td[data-type="number"],
+.data-table th[data-type="number"] {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.data-table td[data-type="currency"] {
+    font-weight: 600;
+}
+
+
+/* =========================================================
+   04. TABLE ACTION BUTTONS
+========================================================= */
+
+.table-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.table-actions .btn {
+    flex-shrink: 0;
+}
+
+.table-action-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition:
+        color var(--transition),
+        background-color var(--transition),
+        border-color var(--transition);
+}
+
+.table-action-icon:hover {
+    color: var(--primary);
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+.table-action-icon:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.table-action-icon svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+
+/* =========================================================
+   05. EMPLOYEE / USER INFORMATION INSIDE TABLES
+========================================================= */
+
+.table-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.table-user-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.table-user-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.table-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.table-user-name {
+    display: block;
+    color: var(--text);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.table-user-subtitle {
+    display: block;
+    margin-top: 2px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+
+/* =========================================================
+   06. TABLE FOOTER / FINANCIAL TOTALS
+========================================================= */
+
+.data-table tfoot {
+    background: var(--surface-alt);
+}
+
+.data-table tfoot th,
+.data-table tfoot td {
+    padding: 13px 12px;
+    border-top: 1px solid var(--border);
+    border-bottom: none;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.data-table tfoot td[data-type="currency"] {
+    color: var(--primary);
+}
+
+
+/* =========================================================
+   07. EMPTY RECORD / FULL-WIDTH ROW
+========================================================= */
+
+.data-table td[colspan] {
+    width: 100%;
+    padding: 0;
+    text-align: center;
+}
+
+.data-table td[colspan] > .empty-state {
+    padding: 35px 20px;
+}
+
+.data-table tbody tr:has(> td[colspan]):hover {
+    background: transparent;
+}
+
+
+/* =========================================================
+   08. TABLE CHECKBOXES
+========================================================= */
+
+.table-checkbox {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.table-checkbox:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   09. TABLE PAGINATION
+========================================================= */
+
+.table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    margin-top: 18px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.pagination-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pagination-actions > span {
+    min-width: 56px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.pagination-actions .btn {
+    min-width: 72px;
+}
+
+
+/* =========================================================
+   10. TABLE UTILITY CLASSES
+========================================================= */
+
+.table-nowrap {
+    white-space: nowrap;
+}
+
+.table-cell-muted {
+    color: var(--text-secondary);
+}
+
+.table-cell-primary {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.table-cell-success {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.table-cell-danger {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.table-cell-warning {
+    color: var(--warning);
+    font-weight: 600;
+}
+
+.table-cell-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.table-row-selected {
+    background: var(--primary-light);
+}
+
+.table-row-inactive {
+    opacity: 0.65;
+}
+
+
+/* =========================================================
+   11. TABLE LOADING PLACEHOLDER
+========================================================= */
+
+.table-loading-cell {
+    padding: 30px 15px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.table-loading-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 100px;
+}
+
+
+/* =========================================================
+   12. TABLET RESPONSIVENESS
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .data-table {
+        font-size: 12px;
+    }
+
+    .data-table th,
+    .data-table td {
+        padding: 11px 9px;
+    }
+
+    .data-table th {
+        font-size: 10px;
+    }
+
+    .table-user {
+        gap: 7px;
+    }
+
+    .table-user-avatar {
+        flex-basis: 30px;
+        width: 30px;
+        height: 30px;
+    }
+
+}
+
+
+/* =========================================================
+   13. MOBILE CARD-STYLE TABLE LAYOUT
+
+   Firebase-generated rows must receive data-label attributes
+   corresponding to their column headings.
+
+   Example:
+   <td data-label="Employee ID">...</td>
+
+   Shared JavaScript will also assign these attributes to
+   existing rows automatically.
+========================================================= */
+
+@media (max-width: 760px) {
+
+    .table-responsive {
+        overflow-x: hidden;
+        overflow-y: visible;
+    }
+
+    .data-table {
+        display: block;
+        width: 100%;
+        border-collapse: separate;
+        font-size: 12px;
+    }
+
+    .data-table caption {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table thead {
+        display: none;
+    }
+
+    .data-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table tbody tr {
+        display: block;
+        width: 100%;
+        margin-bottom: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface);
+    }
+
+    .data-table tbody tr:last-child {
+        margin-bottom: 0;
+    }
+
+    .data-table tbody td {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        min-width: 0;
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--border);
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .data-table tbody td:last-child {
+        border-bottom: none;
+    }
+
+    .data-table tbody td::before {
+        content: attr(data-label);
+        flex: 0 0 39%;
+        min-width: 0;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-weight: 700;
+        text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.2px;
+        overflow-wrap: anywhere;
+    }
+
+    .data-table tbody td[data-label=""]::before,
+    .data-table tbody td:not([data-label])::before {
+        display: none;
+    }
+
+    .data-table tbody td[data-type="currency"],
+    .data-table tbody td[data-type="number"] {
+        text-align: right;
+    }
+
+    .data-table tbody td[colspan] {
+        display: block;
+        padding: 0;
+        border: none;
+        text-align: center;
+    }
+
+    .data-table tbody td[colspan]::before {
+        display: none;
+    }
+
+    .data-table tbody td[colspan] > .empty-state {
+        padding: 28px 15px;
+    }
+
+    .table-actions {
+        justify-content: flex-end;
+        flex: 1;
+    }
+
+    .table-user {
+        justify-content: flex-end;
+        flex: 1;
+        text-align: left;
+    }
+
+    .table-user-info {
+        flex: 0 1 auto;
+    }
+
+    .data-table tfoot {
+        display: block;
+        width: 100%;
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+    }
+
+    .data-table tfoot tr {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .data-table tfoot th,
+    .data-table tfoot td {
+        display: block;
+        width: auto;
+        padding: 5px 0;
+        border: none;
+    }
+
+    .table-pagination {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 15px;
+    }
+
+    .pagination-actions {
+        justify-content: space-between;
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================================
+   14. SMALL MOBILE DEVICES
+========================================================= */
+
+@media (max-width: 420px) {
+
+    .data-table tbody td {
+        gap: 8px;
+        padding: 10px;
+        font-size: 11px;
+    }
+
+    .data-table tbody td::before {
+        flex-basis: 37%;
+        font-size: 10px;
+    }
+
+    .table-user-avatar {
+        flex-basis: 28px;
+        width: 28px;
+        height: 28px;
+    }
+
+    .table-actions {
+        gap: 5px;
+    }
+
+    .pagination-actions {
+        gap: 5px;
+    }
+
+    .pagination-actions .btn {
+        min-width: 65px;
+        padding: 7px 9px;
+        font-size: 11px;
+    }
+
+    .pagination-actions > span {
+        min-width: 45px;
+        font-size: 11px;
+    }
+
+}
+
+
+/* =========================================================
+   15. PRINT STYLES
+
+   Printed reports retain an actual tabular layout.
+========================================================= */
+
+@media print {
+
+    .table-responsive {
+        overflow: visible;
+    }
+
+    .data-table {
+        display: table;
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10px;
+    }
+
+    .data-table thead {
+        display: table-header-group;
+    }
+
+    .data-table tbody {
+        display: table-row-group;
+    }
+
+    .data-table tbody tr {
+        display: table-row;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        border: none;
+    }
+
+    .data-table tbody td {
+        display: table-cell;
+        padding: 7px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+    }
+
+    .data-table tbody td::before {
+        display: none;
+    }
+
+    .data-table tfoot {
+        display: table-footer-group;
+    }
+
+    .data-table tfoot tr {
+        display: table-row;
+    }
+
+    .data-table tfoot th,
+    .data-table tfoot td {
+        display: table-cell;
+        padding: 7px;
+    }
+
+    .table-actions,
+    .table-pagination {
+        display: none;
+    }
+
+}
