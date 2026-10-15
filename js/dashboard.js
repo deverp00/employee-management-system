@@ -1,18 +1,17 @@
+
 /* =========================================================
    EMPLOYEE MANAGEMENT & PAYROLL SYSTEM
    FILE: js/dashboard.js
 
    PURPOSE:
-   Secure, role-aware dashboard controller.
+   Super Admin Dashboard Controller.
 
-   DATA SOURCE:
-   Authenticated backend through EMSFirebase.
-
-   IMPORTANT:
-   - No demo records.
-   - No hardcoded employee data.
-   - No client-side permission assignment.
-   - Backend decides which dashboard data is visible.
+   SECURITY:
+   - Super Admin access only.
+   - Backend-verified role required.
+   - Dashboard hidden until authorization succeeds.
+   - No demo records or hardcoded employee data.
+   - Backend must independently protect /dashboard.
 ========================================================= */
 
 "use strict";
@@ -20,21 +19,20 @@
 (() => {
 
     /* =====================================================
-       01. STATE
+       01. CONFIGURATION & STATE
     ===================================================== */
 
+    const ALLOWED_ROLES = Object.freeze([
+        "super_admin"
+    ]);
+
     const state = {
-
         initialized: false,
-
+        authorized: false,
         loading: false,
-
         context: null,
-
         dashboard: null,
-
         requestId: 0
-
     };
 
 
@@ -43,37 +41,28 @@
     ===================================================== */
 
     const get = (id) => {
-
         return document.getElementById(id);
-
     };
-
 
     const setText = (id, value) => {
 
         const element = get(id);
 
-        if (!element) {
-            return;
-        }
+        if (!element) return;
 
         element.textContent = String(value ?? "");
 
     };
-
 
     const setVisible = (id, visible) => {
 
         const element = get(id);
 
         if (element) {
-
             element.hidden = !visible;
-
         }
 
     };
-
 
     const createElement = (
         tag,
@@ -84,9 +73,7 @@
         const element = document.createElement(tag);
 
         if (className) {
-
             element.className = className;
-
         }
 
         element.textContent = String(text ?? "");
@@ -105,178 +92,189 @@
         const number = Number(value);
 
         if (!Number.isFinite(number)) {
-
             return "—";
-
         }
 
-        return new Intl.NumberFormat(
-            "en-IN"
-        ).format(number);
+        return new Intl.NumberFormat("en-IN").format(number);
 
     };
-
 
     const formatCurrency = (value) => {
 
         const number = Number(value);
 
         if (!Number.isFinite(number)) {
-
             return "—";
-
         }
 
-        return new Intl.NumberFormat(
-            "en-IN",
-            {
-
-                style: "currency",
-
-                currency: "INR",
-
-                maximumFractionDigits: 2
-
-            }
-        ).format(number);
+        return new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+            maximumFractionDigits: 2
+        }).format(number);
 
     };
 
-
     const formatDate = (value) => {
 
-        if (!value) {
-
-            return "—";
-
-        }
+        if (!value) return "—";
 
         const date = new Date(value);
 
-        if (
-            Number.isNaN(date.getTime())
-        ) {
-
+        if (Number.isNaN(date.getTime())) {
             return "—";
-
         }
 
-        return new Intl.DateTimeFormat(
-            "en-IN",
-            {
-
-                day: "2-digit",
-
-                month: "short",
-
-                year: "numeric"
-
-            }
-        ).format(date);
+        return new Intl.DateTimeFormat("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }).format(date);
 
     };
 
 
     /* =====================================================
-       04. DASHBOARD LOADING STATE
+       04. LOADING STATE
     ===================================================== */
 
     const setLoading = (loading) => {
 
         state.loading = loading;
 
-        setVisible(
-            "dashboardLoading",
-            loading
-        );
+        setVisible("dashboardLoading", loading);
 
-        const content = get(
-            "dashboardContent"
-        );
+        const content = get("dashboardContent");
 
         if (content) {
-
             content.setAttribute(
                 "aria-busy",
                 String(loading)
             );
-
         }
 
-        const refreshButton = get(
-            "refreshDashboard"
-        );
+        const refreshButton = get("refreshDashboard");
 
         if (refreshButton) {
-
-            refreshButton.disabled = loading;
-
+            refreshButton.disabled =
+                loading || !state.authorized;
         }
 
     };
 
 
     /* =====================================================
-       05. DASHBOARD ERROR HANDLING
+       05. ERROR HANDLING
     ===================================================== */
 
     const showError = (message) => {
 
-        const errorElement = get(
-            "dashboardError"
-        );
+        const element = get("dashboardError");
 
-        if (errorElement) {
-
-            errorElement.textContent = message;
-
-            errorElement.hidden = false;
-
+        if (element) {
+            element.textContent = message;
+            element.hidden = false;
         }
 
-        setVisible(
-            "dashboardContent",
-            false
-        );
+        setVisible("dashboardContent", false);
 
     };
 
-
     const clearError = () => {
 
-        const errorElement = get(
-            "dashboardError"
-        );
+        const element = get("dashboardError");
 
-        if (errorElement) {
-
-            errorElement.textContent = "";
-
-            errorElement.hidden = true;
-
+        if (element) {
+            element.textContent = "";
+            element.hidden = true;
         }
 
     };
 
 
     /* =====================================================
-       06. ROLE-BASED INTERFACE
+       06. ACCESS CONTROL
+    ===================================================== */
+
+    const hideProtectedContent = () => {
+
+        setVisible("dashboardContent", false);
+
+        const refreshButton = get("refreshDashboard");
+
+        if (refreshButton) {
+            refreshButton.disabled = true;
+        }
+
+    };
+
+    const denyAccess = () => {
+
+        state.authorized = false;
+        state.context = null;
+        state.dashboard = null;
+
+        ++state.requestId;
+
+        hideProtectedContent();
+
+        setLoading(false);
+
+        showError(
+            "Access denied. This dashboard is restricted to Super Administrators."
+        );
+
+    };
+
+    const verifySuperAdmin = async () => {
+
+        if (
+            !window.EMSFirebase ||
+            typeof window.EMSFirebase.requireAuth !== "function"
+        ) {
+            throw new Error(
+                "Authentication service is unavailable."
+            );
+        }
+
+        /*
+         * requireAuth must validate the Firebase session
+         * against the protected backend /auth/context.
+         *
+         * The role must never come from the login dropdown
+         * or browser storage.
+         */
+
+        const context = await window.EMSFirebase.requireAuth(
+            ALLOWED_ROLES
+        );
+
+        if (!context) {
+            return null;
+        }
+
+        /*
+         * Additional explicit verification.
+         * Fail closed if the returned role is unexpected.
+         */
+
+        if (
+            context.role !== "super_admin" ||
+            context.enabled !== true
+        ) {
+            return null;
+        }
+
+        return context;
+
+    };
+
+
+    /* =====================================================
+       07. ROLE-BASED INTERFACE
     ===================================================== */
 
     const applyRoleVisibility = (context) => {
-
-        /*
-         * data-dashboard-role:
-         *
-         * super_admin
-         * hr_admin
-         * employee
-         *
-         * Multiple roles may be comma-separated.
-         *
-         * This controls presentation only.
-         * Backend permission checks remain mandatory.
-         */
 
         document.querySelectorAll(
             "[data-dashboard-role]"
@@ -286,12 +284,10 @@
                 element.dataset.dashboardRole || ""
             )
                 .split(",")
-                .map((role) => role.trim())
+                .map(role => role.trim())
                 .filter(Boolean);
 
-            element.hidden = !roles.includes(
-                context.role
-            );
+            element.hidden = !roles.includes(context.role);
 
         });
 
@@ -299,7 +295,7 @@
 
 
     /* =====================================================
-       07. DASHBOARD IDENTITY
+       08. DASHBOARD IDENTITY
     ===================================================== */
 
     const renderIdentity = (context) => {
@@ -309,76 +305,48 @@
             context.displayName || "Account"
         );
 
-        const roleNames = {
-
-            super_admin: "Super Administrator",
-
-            hr_admin: "HR Administrator",
-
-            employee: "Employee"
-
-        };
-
         setText(
             "dashboardUserRole",
-            roleNames[context.role] || ""
+            "Super Administrator"
         );
 
     };
 
 
     /* =====================================================
-       08. STATISTICS
+       09. STATISTICS
     ===================================================== */
 
     const STAT_FIELDS = Object.freeze({
 
         totalEmployees: {
-
             id: "totalEmployees",
-
             formatter: formatNumber
-
         },
 
         activeEmployees: {
-
             id: "activeEmployees",
-
             formatter: formatNumber
-
         },
 
         presentToday: {
-
             id: "presentToday",
-
             formatter: formatNumber
-
         },
 
         absentToday: {
-
             id: "absentToday",
-
             formatter: formatNumber
-
         },
 
         pendingLeaves: {
-
             id: "pendingLeaves",
-
             formatter: formatNumber
-
         },
 
         monthlyPayroll: {
-
             id: "monthlyPayroll",
-
             formatter: formatCurrency
-
         },
 
         attendancePercentage: {
@@ -398,30 +366,21 @@
         },
 
         remainingLeaves: {
-
             id: "remainingLeaves",
-
             formatter: formatNumber
-
         }
 
     });
 
-
     const clearStatistics = () => {
 
-        Object.values(STAT_FIELDS)
-            .forEach((field) => {
+        Object.values(STAT_FIELDS).forEach((field) => {
 
-                setText(
-                    field.id,
-                    "—"
-                );
+            setText(field.id, "—");
 
-            });
+        });
 
     };
-
 
     const renderStatistics = (statistics) => {
 
@@ -429,18 +388,11 @@
             !statistics ||
             typeof statistics !== "object"
         ) {
-
             return;
-
         }
 
-        Object.entries(STAT_FIELDS)
-            .forEach(([key, field]) => {
-
-                /*
-                 * Missing values remain unavailable.
-                 * Never display a fabricated zero.
-                 */
+        Object.entries(STAT_FIELDS).forEach(
+            ([key, field]) => {
 
                 if (
                     !Object.prototype.hasOwnProperty.call(
@@ -448,44 +400,30 @@
                         key
                     )
                 ) {
-
-                    setText(
-                        field.id,
-                        "—"
-                    );
-
+                    setText(field.id, "—");
                     return;
-
                 }
 
                 setText(
-
                     field.id,
-
-                    field.formatter(
-                        statistics[key]
-                    )
-
+                    field.formatter(statistics[key])
                 );
 
-            });
+            }
+        );
 
     };
 
 
     /* =====================================================
-       09. RECENT ACTIVITY
+       10. RECENT ACTIVITY
     ===================================================== */
 
     const renderActivities = (activities) => {
 
-        const container = get(
-            "recentActivityList"
-        );
+        const container = get("recentActivityList");
 
-        if (!container) {
-            return;
-        }
+        if (!container) return;
 
         container.replaceChildren();
 
@@ -494,22 +432,17 @@
             activities.length === 0
         ) {
 
-            const empty = createElement(
-
-                "p",
-
-                "text-muted",
-
-                "No recent activity available."
-
+            container.appendChild(
+                createElement(
+                    "p",
+                    "text-muted",
+                    "No recent activity available."
+                )
             );
-
-            container.appendChild(empty);
 
             return;
 
         }
-
 
         activities.forEach((activity) => {
 
@@ -517,9 +450,7 @@
                 !activity ||
                 typeof activity !== "object"
             ) {
-
                 return;
-
             }
 
             const item = createElement(
@@ -533,35 +464,22 @@
             );
 
             const title = createElement(
-
                 "strong",
-
                 "dashboard-activity-title",
-
                 activity.title || "Activity"
-
             );
 
             const description = createElement(
-
                 "p",
-
                 "text-muted",
-
                 activity.description || ""
-
             );
 
             const date = createElement(
-
                 "small",
-
                 "dashboard-activity-date",
-
                 formatDate(activity.createdAt)
-
             );
-
 
             content.append(
                 title,
@@ -579,21 +497,16 @@
 
 
     /* =====================================================
-       10. PENDING APPROVALS
+       11. PENDING APPROVALS
     ===================================================== */
 
     const renderApprovals = (approvals) => {
 
-        const container = get(
-            "pendingApprovalsList"
-        );
+        const container = get("pendingApprovalsList");
 
-        if (!container) {
-            return;
-        }
+        if (!container) return;
 
         container.replaceChildren();
-
 
         if (
             !Array.isArray(approvals) ||
@@ -601,23 +514,16 @@
         ) {
 
             container.appendChild(
-
                 createElement(
-
                     "p",
-
                     "text-muted",
-
                     "No pending approvals."
-
                 )
-
             );
 
             return;
 
         }
-
 
         approvals.forEach((approval) => {
 
@@ -625,47 +531,30 @@
                 !approval ||
                 typeof approval !== "object"
             ) {
-
                 return;
-
             }
 
             const item = createElement(
-
                 "div",
-
                 "dashboard-approval-item"
-
             );
 
             const information = createElement(
-
                 "div",
-
                 "dashboard-approval-info"
-
             );
 
             const title = createElement(
-
                 "strong",
-
                 "",
-
                 approval.title || "Pending Request"
-
             );
 
             const subtitle = createElement(
-
                 "small",
-
                 "text-muted",
-
                 approval.description || ""
-
             );
-
 
             information.append(
                 title,
@@ -673,15 +562,6 @@
             );
 
             item.appendChild(information);
-
-
-            /*
-             * The backend supplies only approvals
-             * this authenticated account may view.
-             *
-             * Approval actions themselves will be
-             * implemented in the leave/payroll modules.
-             */
 
             container.appendChild(item);
 
@@ -691,7 +571,7 @@
 
 
     /* =====================================================
-       11. ATTENDANCE SUMMARY
+       12. ATTENDANCE SUMMARY
     ===================================================== */
 
     const renderAttendance = (attendance) => {
@@ -700,9 +580,7 @@
             !attendance ||
             typeof attendance !== "object"
         ) {
-
             return;
-
         }
 
         setText(
@@ -724,7 +602,7 @@
 
 
     /* =====================================================
-       12. PAYROLL SUMMARY
+       13. PAYROLL SUMMARY
     ===================================================== */
 
     const renderPayroll = (payroll) => {
@@ -733,9 +611,7 @@
             !payroll ||
             typeof payroll !== "object"
         ) {
-
             return;
-
         }
 
         setText(
@@ -762,65 +638,63 @@
 
 
     /* =====================================================
-       13. COMPLETE DASHBOARD RENDER
+       14. DASHBOARD RENDERING
     ===================================================== */
 
     const renderDashboard = (data) => {
+
+        if (!state.authorized) {
+            return;
+        }
 
         if (
             !data ||
             typeof data !== "object" ||
             Array.isArray(data)
         ) {
-
             throw new Error(
                 "Invalid dashboard response."
             );
-
         }
 
         clearStatistics();
 
-        renderStatistics(
-            data.statistics
-        );
+        renderStatistics(data.statistics);
 
-        renderActivities(
-            data.recentActivities
-        );
+        renderActivities(data.recentActivities);
 
-        renderApprovals(
-            data.pendingApprovals
-        );
+        renderApprovals(data.pendingApprovals);
 
-        renderAttendance(
-            data.attendanceSummary
-        );
+        renderAttendance(data.attendanceSummary);
 
-        renderPayroll(
-            data.payrollSummary
-        );
+        renderPayroll(data.payrollSummary);
 
         setText(
             "dashboardLastUpdated",
             formatDate(data.updatedAt)
         );
 
-        setVisible(
-            "dashboardContent",
-            true
-        );
+        setVisible("dashboardContent", true);
 
     };
 
 
     /* =====================================================
-       14. FETCH AUTHORISED DASHBOARD DATA
+       15. FETCH AUTHORIZED DASHBOARD DATA
     ===================================================== */
 
     const loadDashboard = async () => {
 
-        if (state.loading) {
+        /*
+         * Never request dashboard data before
+         * successful Super Admin verification.
+         */
+
+        if (
+            !state.authorized ||
+            state.context?.role !== "super_admin" ||
+            state.loading
+        ) {
             return;
         }
 
@@ -836,23 +710,17 @@
                 !window.EMSFirebase ||
                 typeof window.EMSFirebase.request !== "function"
             ) {
-
                 throw new Error(
                     "Application data service is unavailable."
                 );
-
             }
 
             /*
-             * Backend endpoint:
+             * IMPORTANT:
              *
-             * GET /dashboard
-             *
-             * Backend derives the authenticated UID
-             * and role from the verified Firebase token.
-             *
-             * Never pass a role or UID from a dropdown
-             * to decide which private records to return.
+             * Backend GET /dashboard must independently
+             * verify the Firebase token and enforce
+             * super_admin access.
              */
 
             const response = await window.EMSFirebase.request(
@@ -860,11 +728,10 @@
             );
 
             if (
-                requestId !== state.requestId
+                requestId !== state.requestId ||
+                !state.authorized
             ) {
-
                 return;
-
             }
 
             state.dashboard = response;
@@ -873,12 +740,8 @@
 
         } catch (error) {
 
-            if (
-                requestId !== state.requestId
-            ) {
-
+            if (requestId !== state.requestId) {
                 return;
-
             }
 
             state.dashboard = null;
@@ -890,25 +753,19 @@
             );
 
             console.error(
-                "Dashboard request failed."
+                "Dashboard request failed:",
+                error
             );
 
             window.EMSUI?.showToast(
-
                 "Dashboard information could not be loaded.",
-
                 "danger"
-
             );
 
         } finally {
 
-            if (
-                requestId === state.requestId
-            ) {
-
+            if (requestId === state.requestId) {
                 setLoading(false);
-
             }
 
         }
@@ -917,24 +774,21 @@
 
 
     /* =====================================================
-       15. REFRESH CONTROL
+       16. REFRESH CONTROL
     ===================================================== */
 
     const initializeRefresh = () => {
 
         get("refreshDashboard")?.addEventListener(
-
             "click",
-
             loadDashboard
-
         );
 
     };
 
 
     /* =====================================================
-       16. DASHBOARD INITIALIZATION
+       17. DASHBOARD INITIALIZATION
     ===================================================== */
 
     const initialize = async () => {
@@ -945,47 +799,39 @@
 
         state.initialized = true;
 
+        /*
+         * Keep sensitive interface hidden until the
+         * backend confirms Super Admin access.
+         */
+
+        hideProtectedContent();
+
         clearStatistics();
 
-        setVisible(
-            "dashboardContent",
-            false
-        );
+        clearError();
 
         setLoading(true);
 
         try {
 
-            if (!window.EMSFirebase) {
+            const context = await verifySuperAdmin();
 
-                throw new Error(
-                    "Firebase service bridge is unavailable."
-                );
+            if (!context) {
+
+                denyAccess();
+
+                return;
 
             }
 
             /*
-             * Wait for the authenticated session
-             * and protected backend role verification.
+             * Access granted only after backend
+             * role verification succeeds.
              */
 
-            const context =
-                await window.EMSFirebase.requireAuth([
-
-                    "super_admin",
-
-                    "hr_admin",
-
-                    "employee"
-
-                ]);
-
-
-            if (!context) {
-                return;
-            }
-
             state.context = context;
+
+            state.authorized = true;
 
             renderIdentity(context);
 
@@ -995,7 +841,12 @@
 
             await loadDashboard();
 
-        } catch {
+        } catch (error) {
+
+            state.authorized = false;
+            state.context = null;
+
+            hideProtectedContent();
 
             showError(
                 "Unable to verify your account. Please sign in again."
@@ -1003,13 +854,18 @@
 
             setLoading(false);
 
+            console.error(
+                "Dashboard authorization failed:",
+                error
+            );
+
         }
 
     };
 
 
     /* =====================================================
-       17. PUBLIC DASHBOARD INTERFACE
+       18. PUBLIC DASHBOARD INTERFACE
     ===================================================== */
 
     window.EMSDashboard = Object.freeze({
@@ -1024,7 +880,7 @@
 
 
     /* =====================================================
-       18. START
+       19. START
     ===================================================== */
 
     const start = () => {
@@ -1032,10 +888,10 @@
         if (
             document.body.dataset.page !== "dashboard"
         ) {
-
             return;
-
         }
+
+        hideProtectedContent();
 
         initializeRefresh();
 
@@ -1043,21 +899,12 @@
 
     };
 
-
-    if (
-        document.readyState === "loading"
-    ) {
+    if (document.readyState === "loading") {
 
         document.addEventListener(
-
             "DOMContentLoaded",
-
             start,
-
-            {
-                once: true
-            }
-
+            { once: true }
         );
 
     } else {
