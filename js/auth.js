@@ -1,351 +1,218 @@
+
 /* =========================================================
    EMPLOYEE MANAGEMENT & PAYROLL SYSTEM
    FILE: js/auth.js
 
-   PURPOSE:
-   Firebase Authentication and verified role-based access.
+   Firebase Authentication + Verified Backend Roles
 
    SECURITY:
-   - No credentials hardcoded.
-   - No demo authentication.
-   - No frontend role assignment.
-   - No private keys.
-   - No authentication bypass.
-   - Backend verifies every requested role.
+   - Runtime configuration is loaded before Firebase.
+   - No hardcoded credentials or Firebase UID.
+   - Login role selection never grants permissions.
+   - Backend verifies all account roles.
+   - Browser-session Firebase persistence.
 ========================================================= */
 
 "use strict";
 
 (() => {
 
-    /* =====================================================
-       01. CONSTANTS
-    ===================================================== */
-
-    const ALLOWED_ROLES = Object.freeze([
+    const ROLES = Object.freeze([
         "super_admin",
         "hr_admin",
         "employee"
     ]);
 
-    const ROLE_DESTINATIONS = Object.freeze({
-
-        super_admin: "dashboard.html",
-
-        hr_admin: "dashboard.html",
-
-        employee: "dashboard.html"
-
-    });
-
     const LOGIN_PAGE = "index.html";
+    const DASHBOARD_PAGE = "dashboard.html";
+
+    const SDK_BASE =
+        "https://www.gstatic.com/firebasejs/13.0.0";
 
     const REQUEST_TIMEOUT = 15000;
 
-    /*
-     * SDK version is public library information.
-     * This is not a Firebase API key or credential.
-     */
-
-    const FIREBASE_SDK_VERSION = "13.0.0";
-
-    const SDK_BASE =
-        `https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}`;
-
-
-    /* =====================================================
-       02. PRIVATE APPLICATION STATE
-    ===================================================== */
-
     const state = {
-
         app: null,
-
         auth: null,
-
         sdk: null,
-
         apiBase: null,
-
         context: null,
-
-        initializationPromise: null,
-
+        initPromise: null,
         loginPending: false,
-
-        loggingOut: false,
-
-        observerUnsubscribe: null,
-
-        sessionCheck: null
-
+        logoutPending: false
     };
-
 
     /* =====================================================
-       03. DOM HELPERS
+       DOM HELPERS
     ===================================================== */
 
-    const getElement = (id) => {
+    const get = (id) => document.getElementById(id);
 
-        return document.getElementById(id);
+    const feedback = (id, message) => {
+        const element = get(id);
 
-    };
-
-
-    const setLoginError = (message = "") => {
-
-        const element = getElement("loginError");
-
-        if (!element) {
-            return;
-        }
+        if (!element) return;
 
         element.textContent = message;
-
         element.hidden = !message;
-
     };
 
+    const setBusy = (busy) => {
+        const button = get("loginButton");
+        const label = get("loginButtonText");
+        const form = get("loginForm");
 
-    const setLoginStatus = (message = "") => {
+        if (button) button.disabled = busy;
 
-        const element = getElement("loginStatus");
-
-        if (!element) {
-            return;
-        }
-
-        element.textContent = message;
-
-        element.hidden = !message;
-
-    };
-
-
-    const setLoginBusy = (busy) => {
-
-        const button = getElement("loginButton");
-
-        const buttonText = getElement("loginButtonText");
-
-        const form = getElement("loginForm");
-
-        if (button) {
-
-            button.disabled = busy;
-
-        }
-
-        if (buttonText) {
-
-            buttonText.textContent = busy
+        if (label) {
+            label.textContent = busy
                 ? "Verifying Account..."
                 : "Login";
-
         }
 
-        if (form) {
-
-            form.setAttribute(
-                "aria-busy",
-                String(busy)
-            );
-
-        }
-
+        form?.setAttribute("aria-busy", String(busy));
     };
 
-
     /* =====================================================
-       04. RUNTIME CONFIGURATION
+       RUNTIME CONFIGURATION
     ===================================================== */
 
-    /*
-     * Supplied by the deployment integration.
-     *
-     * Expected public runtime configuration:
-     *
-     * window.EMS_RUNTIME_CONFIG = {
-     *     firebase: { ...public Firebase web config... },
-     *     apiBase: "...backend origin..."
-     * };
-     *
-     * This file intentionally contains neither actual
-     * Firebase project values nor backend credentials.
-     *
-     * Firebase web configuration is public application
-     * identification, NOT a server-side secret.
-     *
-     * Actual secrets remain in protected backend storage.
-     */
+    const getConfiguration = async () => {
 
-    const getRuntimeConfiguration = () => {
+        /*
+         * runtime-config.js must be loaded before
+         * auth.js in every HTML page.
+         */
 
-        const config = window.EMS_RUNTIME_CONFIG;
-
-        if (!config || typeof config !== "object") {
-
+        if (!window.EMS_RUNTIME_CONFIG_READY) {
             throw new Error(
-                "Application runtime configuration is unavailable."
+                "Application configuration loader is missing."
             );
-
         }
+
+        const config =
+            await window.EMS_RUNTIME_CONFIG_READY;
 
         if (
+            !config ||
+            typeof config !== "object" ||
             !config.firebase ||
-            typeof config.firebase !== "object"
+            typeof config.apiBase !== "string"
         ) {
-
             throw new Error(
-                "Firebase web configuration is unavailable."
+                "Application configuration is unavailable."
             );
-
         }
 
-        const requiredFields = [
+        const required = [
             "apiKey",
             "authDomain",
             "projectId",
             "appId"
         ];
 
-        for (const field of requiredFields) {
-
+        for (const field of required) {
             if (
                 typeof config.firebase[field] !== "string" ||
                 !config.firebase[field].trim()
             ) {
-
                 throw new Error(
                     "Firebase configuration is incomplete."
                 );
-
             }
-
         }
 
-        if (
-            typeof config.apiBase !== "string" ||
-            !config.apiBase.trim()
-        ) {
-
-            throw new Error(
-                "Backend endpoint is not configured."
-            );
-
-        }
-
-        const apiURL = new URL(
-            config.apiBase,
-            window.location.origin
-        );
-
-        const localDevelopment =
-            ["localhost", "127.0.0.1"].includes(
-                apiURL.hostname
-            );
+        const url = new URL(config.apiBase);
 
         if (
-            apiURL.protocol !== "https:" &&
-            !(
-                localDevelopment &&
-                apiURL.protocol === "http:"
-            )
+            url.protocol !== "https:" ||
+            url.username ||
+            url.password ||
+            url.search ||
+            url.hash
         ) {
-
             throw new Error(
-                "A secure backend endpoint is required."
+                "Invalid secure backend configuration."
             );
-
         }
 
         return {
-
             firebase: config.firebase,
-
-            apiBase: apiURL.href.replace(/\/+$/, "")
-
+            apiBase: url.href.replace(/\/+$/, "")
         };
-
     };
 
-
     /* =====================================================
-       05. FIREBASE SDK INITIALIZATION
+       FIREBASE INITIALIZATION
     ===================================================== */
 
     const initialize = () => {
 
-        if (state.initializationPromise) {
-
-            return state.initializationPromise;
-
+        if (state.initPromise) {
+            return state.initPromise;
         }
 
-        state.initializationPromise = (
-            async () => {
+        state.initPromise = (async () => {
 
-                const config = getRuntimeConfiguration();
+            const config = await getConfiguration();
 
-                const [
-                    appModule,
-                    authModule
-                ] = await Promise.all([
+            const [appSDK, authSDK] = await Promise.all([
+                import(`${SDK_BASE}/firebase-app.js`),
+                import(`${SDK_BASE}/firebase-auth.js`)
+            ]);
 
-                    import(
-                        `${SDK_BASE}/firebase-app.js`
-                    ),
+            const app = appSDK.initializeApp(
+                config.firebase
+            );
 
-                    import(
-                        `${SDK_BASE}/firebase-auth.js`
-                    )
+            const auth = authSDK.getAuth(app);
 
-                ]);
+            /*
+             * Session persistence:
+             * Sign-in survives a same-tab navigation,
+             * but does not use custom token storage.
+             */
 
-                const app = appModule.initializeApp(
-                    config.firebase
-                );
+            await authSDK.setPersistence(
+                auth,
+                authSDK.browserSessionPersistence
+            );
 
-                const auth = authModule.getAuth(app);
+            /*
+             * Wait until Firebase resolves the initial
+             * authentication state before inspecting
+             * auth.currentUser.
+             */
 
-                /*
-                 * Browser-session persistence.
-                 * Passwords and ID tokens are never copied
-                 * into custom localStorage/sessionStorage keys.
-                 */
+            await auth.authStateReady();
 
-                await authModule.setPersistence(
-                    auth,
-                    authModule.browserSessionPersistence
-                );
+            state.app = app;
+            state.auth = auth;
+            state.sdk = authSDK;
+            state.apiBase = config.apiBase;
 
-                state.app = app;
+            authSDK.onAuthStateChanged(auth, (user) => {
+                if (
+                    !user ||
+                    (state.context &&
+                     state.context.uid !== user.uid)
+                ) {
+                    state.context = null;
+                }
+            });
 
-                state.auth = auth;
+            return true;
 
-                state.sdk = authModule;
-
-                state.apiBase = config.apiBase;
-
-                return true;
-
-            }
-        )().catch((error) => {
-
-            state.initializationPromise = null;
-
+        })().catch((error) => {
+            state.initPromise = null;
             throw error;
-
         });
 
-        return state.initializationPromise;
-
+        return state.initPromise;
     };
 
-
     /* =====================================================
-       06. AUTHENTICATED BACKEND REQUEST
+       AUTHENTICATED API REQUEST
     ===================================================== */
 
     const authenticatedRequest = async (
@@ -355,102 +222,106 @@
 
         await initialize();
 
+        if (
+            typeof path !== "string" ||
+            !path.startsWith("/") ||
+            path.startsWith("//") ||
+            path.includes("#")
+        ) {
+            throw new Error("Invalid API path.");
+        }
+
         const user = state.auth.currentUser;
 
         if (!user) {
-
-            throw new Error(
-                "Authentication required."
-            );
-
+            state.context = null;
+            throw new Error("Authentication required.");
         }
 
         /*
-         * Firebase issues the ID token.
-         * Never accept a UID supplied by an HTML field
-         * as proof of user identity.
+         * This token proves Firebase identity only.
+         * Backend must independently verify role,
+         * account status and operation permissions.
          */
 
-        const token = await state.sdk.getIdToken(
-            user
-        );
+        const token = await state.sdk.getIdToken(user);
 
         const controller = new AbortController();
 
-        const timeout = window.setTimeout(() => {
-
-            controller.abort();
-
-        }, REQUEST_TIMEOUT);
+        const timeout = window.setTimeout(
+            () => controller.abort(),
+            REQUEST_TIMEOUT
+        );
 
         try {
+
+            const hasBody =
+                options.body !== undefined &&
+                options.body !== null;
 
             const response = await fetch(
                 `${state.apiBase}${path}`,
                 {
-
                     method: options.method || "GET",
 
                     headers: {
-
                         Authorization: `Bearer ${token}`,
-
                         Accept: "application/json",
 
-                        ...(options.body
-                            ? {
-                                "Content-Type":
-                                    "application/json"
-                            }
-                            : {})
-
+                        ...(hasBody ? {
+                            "Content-Type": "application/json"
+                        } : {})
                     },
 
-                    body: options.body
+                    body: hasBody
                         ? JSON.stringify(options.body)
                         : undefined,
 
-                    signal: controller.signal,
-
                     credentials: "omit",
-
-                    cache: "no-store"
-
+                    cache: "no-store",
+                    signal: controller.signal
                 }
             );
 
-            if (!response.ok) {
+            if (response.status === 401) {
+                state.context = null;
+                throw new Error("Authentication required.");
+            }
 
-                if (
-                    response.status === 401 ||
-                    response.status === 403
-                ) {
-
-                    throw new Error(
-                        "Authentication or permission verification failed."
-                    );
-
-                }
-
+            if (response.status === 403) {
                 throw new Error(
-                    "The requested operation could not be completed."
+                    "This operation is not authorised."
                 );
+            }
 
+            if (!response.ok) {
+                throw new Error(
+                    "The requested operation failed."
+                );
+            }
+
+            if (response.status === 204) {
+                return null;
+            }
+
+            const contentType =
+                response.headers.get("content-type") || "";
+
+            if (!contentType.includes("application/json")) {
+                throw new Error(
+                    "Invalid API response format."
+                );
             }
 
             return response.json();
 
         } finally {
-
             window.clearTimeout(timeout);
-
         }
-
     };
 
-
     /* =====================================================
-       07. VERIFY AUTHENTICATED ACCOUNT CONTEXT
+       VERIFY BACKEND ACCOUNT CONTEXT
     ===================================================== */
 
     const verifyAccountContext = async (
@@ -459,83 +330,73 @@
 
         state.context = null;
 
-        const user = state.auth?.currentUser;
+        await initialize();
+
+        const user = state.auth.currentUser;
 
         if (!user) {
-
-            throw new Error(
-                "No authenticated account was found."
-            );
-
+            throw new Error("Authentication required.");
         }
 
         /*
-         * Backend contract:
-         *
          * GET /auth/context
          *
          * Backend must:
-         * 1. Verify Firebase ID token using Admin SDK.
-         * 2. Derive UID from verified token.
-         * 3. Read protected user-role assignment.
-         * 4. Verify active account status.
-         * 5. Return the authorised account context.
-         *
-         * The backend must never trust a client-submitted
-         * UID, role or permission claim without verification.
+         * 1. Verify the Firebase ID token.
+         * 2. Derive UID from the verified token.
+         * 3. Read protected account assignment.
+         * 4. Verify account is enabled.
+         * 5. Return authoritative role and employeeId.
          */
 
-        const result = await authenticatedRequest(
+        const response = await authenticatedRequest(
             "/auth/context"
         );
 
         if (
-            !result ||
-            result.uid !== user.uid ||
-            result.enabled !== true ||
-            !ALLOWED_ROLES.includes(result.role)
+            !response ||
+            response.uid !== user.uid ||
+            response.enabled !== true ||
+            !ROLES.includes(response.role)
         ) {
-
             throw new Error(
-                "Your account is not authorised to access this application."
+                "Your account is not authorised."
             );
-
         }
 
         if (
             requestedRole &&
-            result.role !== requestedRole
+            response.role !== requestedRole
         ) {
-
             throw new Error(
                 "The selected login role does not match your assigned account role."
             );
-
         }
 
         const context = Object.freeze({
-
             uid: user.uid,
+            role: response.role,
 
-            role: result.role,
+            employeeId:
+                typeof response.employeeId === "string"
+                    ? response.employeeId
+                    : null,
 
-            employeeId: result.employeeId || null,
-
-            displayName: result.displayName || "",
+            displayName:
+                typeof response.displayName === "string"
+                    ? response.displayName
+                    : "",
 
             enabled: true
-
         });
 
         state.context = context;
 
         return context;
-
     };
 
-
     /* =====================================================
-       08. LOGIN
+       LOGIN
     ===================================================== */
 
     const login = async (
@@ -545,19 +406,15 @@
     ) => {
 
         if (state.loginPending) {
-
             throw new Error(
-                "A login request is already being processed."
+                "A login request is already in progress."
             );
-
         }
 
-        if (!ALLOWED_ROLES.includes(requestedRole)) {
-
+        if (!ROLES.includes(requestedRole)) {
             throw new Error(
                 "Please select a valid login role."
             );
-
         }
 
         if (
@@ -566,240 +423,128 @@
             typeof password !== "string" ||
             !password
         ) {
-
             throw new Error(
                 "Enter your email address and password."
             );
-
         }
 
         state.loginPending = true;
-
         state.context = null;
 
         try {
 
             await initialize();
 
-            /*
-             * Firebase validates the supplied credentials.
-             */
-
             const credential =
                 await state.sdk.signInWithEmailAndPassword(
-
                     state.auth,
-
                     email.trim(),
-
                     password
-
                 );
 
             if (!credential.user) {
-
-                throw new Error(
-                    "Authentication failed."
-                );
-
+                throw new Error("Authentication failed.");
             }
 
-            /*
-             * Actual administrative role is retrieved
-             * from the protected backend.
-             */
-
-            const context = await verifyAccountContext(
+            return await verifyAccountContext(
                 requestedRole
             );
-
-            return context;
 
         } catch (error) {
 
             state.context = null;
 
             /*
-             * An authenticated Firebase session without
-             * verified application permission must not
-             * remain active after a failed login attempt.
+             * Do not retain a Firebase session after
+             * a failed application-role verification.
              */
 
             if (state.auth?.currentUser) {
-
                 try {
-
-                    await state.sdk.signOut(
-                        state.auth
-                    );
-
+                    await state.sdk.signOut(state.auth);
                 } catch {
-
-                    // Do not expose internal error details.
-
+                    // No sensitive error details exposed.
                 }
-
             }
 
             throw error;
 
         } finally {
-
             state.loginPending = false;
-
         }
-
     };
 
-
     /* =====================================================
-       09. LOGOUT
+       LOGOUT
     ===================================================== */
 
     const logout = async () => {
 
-        if (state.loggingOut) {
-            return;
-        }
+        if (state.logoutPending) return;
 
-        state.loggingOut = true;
+        state.logoutPending = true;
+        state.context = null;
 
         try {
 
-            await initialize();
-
-            await state.sdk.signOut(
-                state.auth
-            );
-
-            state.context = null;
-
             /*
-             * Backend operations must independently
-             * verify Firebase tokens and permissions.
+             * A configuration outage should not
+             * prevent the browser from reaching the
+             * login page.
              */
 
-            window.location.replace(
-                LOGIN_PAGE
-            );
+            if (state.auth && state.sdk) {
+                await state.sdk.signOut(state.auth);
+            }
+
+            window.location.replace(LOGIN_PAGE);
 
         } finally {
-
-            state.loggingOut = false;
-
+            state.logoutPending = false;
         }
-
     };
 
-
     /* =====================================================
-       10. AUTHENTICATION STATE RESOLUTION
-    ===================================================== */
-
-    const waitForAuthState = () => {
-
-        if (state.sessionCheck) {
-
-            return state.sessionCheck;
-
-        }
-
-        state.sessionCheck = new Promise(
-            (resolve, reject) => {
-
-                let unsubscribe = null;
-
-                unsubscribe = state.sdk.onAuthStateChanged(
-
-                    state.auth,
-
-                    (user) => {
-
-                        unsubscribe?.();
-
-                        resolve(user);
-
-                    },
-
-                    (error) => {
-
-                        unsubscribe?.();
-
-                        reject(error);
-
-                    }
-
-                );
-
-            }
-        );
-
-        return state.sessionCheck;
-
-    };
-
-
-    /* =====================================================
-       11. PROTECTED PAGE VERIFICATION
+       PROTECTED PAGE ACCESS
     ===================================================== */
 
     const requireAuth = async (
-        allowedRoles = ALLOWED_ROLES
+        allowedRoles = ROLES
     ) => {
-
-        const permittedRoles = Array.isArray(
-            allowedRoles
-        )
-            ? allowedRoles
-            : ALLOWED_ROLES;
 
         try {
 
+            const permittedRoles =
+                Array.isArray(allowedRoles)
+                    ? allowedRoles
+                    : ROLES;
+
             await initialize();
 
-            const user = await waitForAuthState();
+            const user = state.auth.currentUser;
 
             if (!user) {
-
                 state.context = null;
-
-                window.location.replace(
-                    LOGIN_PAGE
-                );
-
+                window.location.replace(LOGIN_PAGE);
                 return null;
-
             }
 
-            const context = await verifyAccountContext();
+            const context =
+                await verifyAccountContext();
 
-            if (
-                !permittedRoles.includes(
-                    context.role
-                )
-            ) {
-
+            if (!permittedRoles.includes(context.role)) {
                 throw new Error(
-                    "You do not have permission to access this page."
+                    "This page is not authorised."
                 );
-
             }
 
             document.dispatchEvent(
-                new CustomEvent(
-                    "ems:auth-ready",
-                    {
-
-                        detail: {
-
-                            role: context.role,
-
-                            employeeId: context.employeeId
-
-                        }
-
+                new CustomEvent("ems:auth-ready", {
+                    detail: {
+                        role: context.role,
+                        employeeId: context.employeeId
                     }
-                )
+                })
             );
 
             return context;
@@ -809,67 +554,41 @@
             state.context = null;
 
             document.dispatchEvent(
-                new CustomEvent(
-                    "ems:auth-denied"
-                )
+                new CustomEvent("ems:auth-denied")
             );
 
-            window.location.replace(
-                LOGIN_PAGE
-            );
+            window.location.replace(LOGIN_PAGE);
 
             return null;
-
         }
-
     };
 
-
     /* =====================================================
-       12. LOGIN FORM INITIALIZATION
+       LOGIN FORM
     ===================================================== */
 
     const initializeLoginForm = () => {
 
-        const form = getElement("loginForm");
+        const form = get("loginForm");
 
-        if (!form) {
-            return;
-        }
+        if (!form) return;
 
-        const emailInput = getElement(
-            "loginEmail"
-        );
+        const emailInput = get("loginEmail");
+        const passwordInput = get("loginPassword");
+        const roleInput = get("loginRole");
+        const passwordToggle = get("showPassword");
 
-        const passwordInput = getElement(
-            "loginPassword"
-        );
-
-        const roleInput = getElement(
-            "loginRole"
-        );
-
-        const showPassword = getElement(
-            "showPassword"
-        );
-
-
-        showPassword?.addEventListener(
+        passwordToggle?.addEventListener(
             "change",
             () => {
-
-                if (!passwordInput) {
-                    return;
+                if (passwordInput) {
+                    passwordInput.type =
+                        passwordToggle.checked
+                            ? "text"
+                            : "password";
                 }
-
-                passwordInput.type =
-                    showPassword.checked
-                        ? "text"
-                        : "password";
-
             }
         );
-
 
         form.addEventListener(
             "submit",
@@ -877,134 +596,94 @@
 
                 event.preventDefault();
 
-                if (state.loginPending) {
-                    return;
-                }
+                if (state.loginPending) return;
 
-                setLoginError("");
+                feedback("loginError", "");
+                feedback("loginStatus", "");
 
-                setLoginStatus("");
-
-                const email = emailInput?.value || "";
-
-                const password =
-                    passwordInput?.value || "";
-
-                const requestedRole =
-                    roleInput?.value || "";
-
-                setLoginBusy(true);
+                setBusy(true);
 
                 try {
 
                     const context = await login(
-
-                        email,
-
-                        password,
-
-                        requestedRole
-
+                        emailInput?.value || "",
+                        passwordInput?.value || "",
+                        roleInput?.value || ""
                     );
-
-                    /*
-                     * Immediately clear the password input
-                     * after successful verification.
-                     */
 
                     if (passwordInput) {
-
                         passwordInput.value = "";
-
                     }
 
-                    setLoginStatus(
-                        "Account verified. Opening your dashboard..."
+                    feedback(
+                        "loginStatus",
+                        "Account verified. Opening dashboard..."
                     );
 
-                    const destination =
-                        ROLE_DESTINATIONS[context.role];
-
-                    if (!destination) {
-
+                    if (!ROLES.includes(context.role)) {
                         throw new Error(
-                            "Your account dashboard is unavailable."
+                            "Invalid account destination."
                         );
-
                     }
 
                     window.location.replace(
-                        destination
+                        DASHBOARD_PAGE
                     );
 
                 } catch (error) {
 
-                    const safeMessages = [
-
+                    const messages = new Set([
                         "Please select a valid login role.",
-
                         "Enter your email address and password.",
-
                         "The selected login role does not match your assigned account role.",
+                        "Your account is not authorised."
+                    ]);
 
-                        "Your account is not authorised to access this application."
-
-                    ];
-
-                    const message =
-                        safeMessages.includes(error.message)
+                    feedback(
+                        "loginError",
+                        messages.has(error.message)
                             ? error.message
-                            : "Unable to sign in. Check your credentials or contact your administrator.";
-
-                    setLoginError(message);
+                            : "Unable to sign in. Check your credentials or contact your administrator."
+                    );
 
                 } finally {
-
-                    setLoginBusy(false);
-
+                    setBusy(false);
                 }
-
             }
         );
-
     };
 
-
     /* =====================================================
-       13. EXISTING SESSION ON LOGIN PAGE
+       EXISTING SESSION ON LOGIN PAGE
     ===================================================== */
 
-    const checkExistingLoginSession = async () => {
+    const checkExistingSession = async () => {
 
-        if (
-            document.body.dataset.page !== "login"
-        ) {
-
+        if (document.body.dataset.page !== "login") {
             return;
-
         }
 
         try {
 
             await initialize();
 
-            const user = await waitForAuthState();
-
-            if (!user || state.loginPending) {
+            if (
+                !state.auth.currentUser ||
+                state.loginPending
+            ) {
                 return;
             }
 
-            const context = await verifyAccountContext();
+            const context =
+                await verifyAccountContext();
 
-            const destination =
-                ROLE_DESTINATIONS[context.role];
-
-            if (destination) {
-
+            if (
+                ROLES.includes(context.role) &&
+                !state.loginPending
+            ) {
                 window.location.replace(
-                    destination
+                    DASHBOARD_PAGE
                 );
-
             }
 
         } catch {
@@ -1012,83 +691,62 @@
             state.context = null;
 
             /*
-             * A failed configuration or backend check
-             * must never create a successful session.
+             * An invalid application session must not
+             * redirect into a protected page.
              */
 
+            if (state.auth?.currentUser) {
+                try {
+                    await state.sdk.signOut(state.auth);
+                } catch {
+                    // Keep login access available.
+                }
+            }
         }
-
     };
 
-
     /* =====================================================
-       14. PUBLIC AUTHENTICATION INTERFACE
+       PUBLIC INTERFACE
     ===================================================== */
 
     window.EMSAuth = Object.freeze({
 
         initialize,
-
         login,
-
         logout,
-
         requireAuth,
-
         authenticatedRequest,
 
         getContext: () => state.context,
 
-        getCurrentUser: () => {
-
-            return state.auth?.currentUser || null;
-
-        }
+        getCurrentUser: () =>
+            state.auth?.currentUser || null
 
     });
 
-
     /* =====================================================
-       15. INITIALIZATION
+       START
     ===================================================== */
 
     const start = () => {
 
-        initializeLoginForm();
-
-        if (
-            document.body.dataset.page === "login"
-        ) {
-
-            checkExistingLoginSession();
-
+        if (document.body.dataset.page !== "login") {
+            return;
         }
 
-        /*
-         * Protected-page verification will be invoked
-         * by the shared authentication bootstrap before
-         * any sensitive module requests are performed.
-         */
+        initializeLoginForm();
 
+        checkExistingSession();
     };
 
-
-    if (
-        document.readyState === "loading"
-    ) {
-
+    if (document.readyState === "loading") {
         document.addEventListener(
             "DOMContentLoaded",
             start,
-            {
-                once: true
-            }
+            { once: true }
         );
-
     } else {
-
         start();
-
     }
 
 })();
