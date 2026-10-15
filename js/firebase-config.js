@@ -1,20 +1,18 @@
+
 /* =========================================================
    EMPLOYEE MANAGEMENT & PAYROLL SYSTEM
    FILE: js/firebase-config.js
 
    PURPOSE:
-   Shared Firebase configuration and service bridge.
+   Shared Firebase configuration and protected API bridge.
 
-   SECURITY RULES:
-   - No actual Firebase project values in this file.
-   - No service-account credentials.
-   - No private API tokens.
-   - No hardcoded user UID.
-   - No hardcoded roles or passwords.
-   - No demo configuration.
-   - No authentication bypass.
-
-   Firebase Auth initialization belongs to auth.js.
+   SECURITY:
+   - No hardcoded Firebase project values.
+   - No private credentials.
+   - No hardcoded UID or account role.
+   - No duplicate Firebase app initialization.
+   - Authentication is managed exclusively by auth.js.
+   - Protected requests use verified Firebase ID tokens.
 ========================================================= */
 
 "use strict";
@@ -31,13 +29,13 @@
 
         initializing: null,
 
-        configuration: null
+        publicInfo: null
 
     };
 
 
     /* =====================================================
-       02. CONFIGURATION VALIDATION
+       02. VALIDATE CONFIGURATION
     ===================================================== */
 
     const validateConfiguration = (config) => {
@@ -56,11 +54,12 @@
 
         if (
             !config.firebase ||
-            typeof config.firebase !== "object"
+            typeof config.firebase !== "object" ||
+            Array.isArray(config.firebase)
         ) {
 
             throw new Error(
-                "Firebase configuration is unavailable."
+                "Firebase public configuration is unavailable."
             );
 
         }
@@ -77,24 +76,20 @@
 
         ];
 
-
         for (const field of requiredFields) {
 
-            const value = config.firebase[field];
-
             if (
-                typeof value !== "string" ||
-                !value.trim()
+                typeof config.firebase[field] !== "string" ||
+                !config.firebase[field].trim()
             ) {
 
                 throw new Error(
-                    "Firebase configuration is incomplete."
+                    "Firebase public configuration is incomplete."
                 );
 
             }
 
         }
-
 
         if (
             typeof config.apiBase !== "string" ||
@@ -107,89 +102,44 @@
 
         }
 
-
-        const backendURL = new URL(
-
-            config.apiBase,
-
-            window.location.origin
-
-        );
-
-
-        const isLocalDevelopment = [
-
-            "localhost",
-
-            "127.0.0.1"
-
-        ].includes(backendURL.hostname);
-
+        const apiUrl = new URL(config.apiBase);
 
         if (
-            backendURL.protocol !== "https:" &&
-            !(
-                isLocalDevelopment &&
-                backendURL.protocol === "http:"
-            )
+            apiUrl.protocol !== "https:" ||
+            apiUrl.username ||
+            apiUrl.password ||
+            apiUrl.search ||
+            apiUrl.hash
         ) {
 
             throw new Error(
-                "A secure backend connection is required."
+                "Invalid backend API address."
             );
 
         }
 
+        return Object.freeze({
 
-        if (
-            backendURL.username ||
-            backendURL.password ||
-            backendURL.search ||
-            backendURL.hash
-        ) {
+            projectId: config.firebase.projectId,
 
-            throw new Error(
-                "Invalid backend endpoint configuration."
-            );
+            apiBase: apiUrl.href.replace(/\/+$/, "")
 
-        }
-
-
-        return true;
+        });
 
     };
 
 
     /* =====================================================
-       03. READ DEPLOYMENT CONFIGURATION
-    ===================================================== */
-
-    const readConfiguration = () => {
-
-        /*
-         * The deployment integration must provide:
-         *
-         * window.EMS_RUNTIME_CONFIG
-         *
-         * BEFORE this file and auth.js execute.
-         *
-         * No fallback credentials are permitted.
-         */
-
-        const config = window.EMS_RUNTIME_CONFIG;
-
-        validateConfiguration(config);
-
-        return config;
-
-    };
-
-
-    /* =====================================================
-       04. INITIALIZE SHARED SERVICE BRIDGE
+       03. INITIALIZE SHARED SERVICE
     ===================================================== */
 
     const initialize = () => {
+
+        if (state.ready) {
+
+            return Promise.resolve(true);
+
+        }
 
         if (state.initializing) {
 
@@ -197,77 +147,102 @@
 
         }
 
+        state.initializing = (async () => {
 
-        state.initializing = (
-            async () => {
+            /*
+             * runtime-config.js runs before this file.
+             *
+             * The promise must resolve before the
+             * configuration is accessed.
+             */
 
-                const config = readConfiguration();
+            if (!window.EMS_RUNTIME_CONFIG_READY) {
 
-                /*
-                 * Authentication initialization is
-                 * delegated to the existing auth.js.
-                 *
-                 * This prevents multiple competing
-                 * Firebase initialization routines.
-                 */
-
-                if (
-                    !window.EMSAuth ||
-                    typeof window.EMSAuth.initialize !== "function"
-                ) {
-
-                    throw new Error(
-                        "Authentication module is unavailable."
-                    );
-
-                }
-
-
-                await window.EMSAuth.initialize();
-
-
-                state.configuration = Object.freeze({
-
-                    projectId: config.firebase.projectId,
-
-                    apiBase: new URL(
-
-                        config.apiBase,
-
-                        window.location.origin
-
-                    ).href.replace(/\/+$/, "")
-
-                });
-
-
-                state.ready = true;
-
-
-                document.dispatchEvent(
-
-                    new CustomEvent(
-                        "ems:firebase-ready"
-                    )
-
+                throw new Error(
+                    "Runtime configuration loader is missing."
                 );
 
+            }
 
-                return true;
+            const configuration =
+                await window.EMS_RUNTIME_CONFIG_READY;
+
+            const publicInfo =
+                validateConfiguration(configuration);
+
+            /*
+             * auth.js is responsible for Firebase SDK
+             * imports, app initialization, Auth session
+             * persistence and ID token retrieval.
+             *
+             * Do not initialize a second Firebase app.
+             */
+
+            if (
+                !window.EMSAuth ||
+                typeof window.EMSAuth.initialize !== "function" ||
+                typeof window.EMSAuth.requireAuth !== "function" ||
+                typeof window.EMSAuth.authenticatedRequest !== "function"
+            ) {
+
+                throw new Error(
+                    "Authentication service is unavailable."
+                );
 
             }
-        )().catch((error) => {
+
+            await window.EMSAuth.initialize();
+
+            state.publicInfo = publicInfo;
+
+            state.ready = true;
+
+            document.dispatchEvent(
+
+                new CustomEvent(
+                    "ems:firebase-ready",
+                    {
+
+                        detail: {
+
+                            projectId:
+                                publicInfo.projectId
+
+                        }
+
+                    }
+                )
+
+            );
+
+            return true;
+
+        })().catch((error) => {
+
+            /*
+             * A failed attempt is not treated as
+             * successful initialization.
+             *
+             * A later explicit call may retry.
+             */
 
             state.ready = false;
 
-            state.configuration = null;
+            state.publicInfo = null;
 
             state.initializing = null;
+
+            document.dispatchEvent(
+
+                new CustomEvent(
+                    "ems:firebase-error"
+                )
+
+            );
 
             throw error;
 
         });
-
 
         return state.initializing;
 
@@ -275,41 +250,45 @@
 
 
     /* =====================================================
-       05. AUTHENTICATION CONTEXT
+       04. VERIFY PROTECTED PAGE ACCESS
     ===================================================== */
 
-    const getAuthContext = () => {
+    const requireAuth = async (
+        allowedRoles = [
 
-        if (!state.ready) {
+            "super_admin",
 
-            return null;
+            "hr_admin",
 
-        }
+            "employee"
 
-        return window.EMSAuth?.getContext() || null;
+        ]
+    ) => {
 
-    };
-
-
-    /* =====================================================
-       06. PROTECTED PAGE ACCESS
-    ===================================================== */
-
-    const requireAuth = async (allowedRoles) => {
-
-        await initialize();
+        /*
+         * Role arrays determine which authenticated
+         * account types may access a page.
+         *
+         * They never assign an account its role.
+         */
 
         if (
-            !window.EMSAuth ||
-            typeof window.EMSAuth.requireAuth !== "function"
+            !Array.isArray(allowedRoles) ||
+            allowedRoles.length === 0
         ) {
 
             throw new Error(
-                "Authentication service is unavailable."
+                "A valid page access policy is required."
             );
 
         }
 
+        /*
+         * If public configuration is temporarily
+         * unavailable, fail closed.
+         */
+
+        await initialize();
 
         return window.EMSAuth.requireAuth(
             allowedRoles
@@ -319,7 +298,7 @@
 
 
     /* =====================================================
-       07. AUTHENTICATED BACKEND REQUESTS
+       05. AUTHENTICATED API REQUESTS
     ===================================================== */
 
     const request = async (
@@ -329,57 +308,97 @@
 
         await initialize();
 
-
         if (
             typeof path !== "string" ||
             !path.startsWith("/") ||
-            path.startsWith("//")
+            path.startsWith("//") ||
+            path.includes("#")
         ) {
 
             throw new Error(
-                "Invalid application endpoint."
+                "Invalid protected API path."
             );
 
         }
-
 
         if (
-            !window.EMSAuth ||
-            typeof window.EMSAuth.authenticatedRequest !== "function"
+            options === null ||
+            typeof options !== "object" ||
+            Array.isArray(options)
         ) {
 
             throw new Error(
-                "Authenticated request service is unavailable."
+                "Invalid API request options."
             );
 
         }
 
-
         /*
-         * auth.js attaches the current Firebase ID token.
+         * auth.js adds the Firebase ID token.
          *
-         * The backend must independently verify:
-         * - Token validity
-         * - Authenticated UID
-         * - Account status
-         * - Role
-         * - Resource ownership
-         * - Requested operation permission
+         * The backend verifies the token and
+         * independently enforces account status,
+         * resource ownership and RBAC permissions.
+         *
+         * Never accept an arbitrary client-provided
+         * role or UID as proof of authorization.
          */
 
         return window.EMSAuth.authenticatedRequest(
-
             path,
-
             options
-
         );
 
     };
 
 
     /* =====================================================
-       08. READINESS CHECK
+       06. VERIFIED ACCOUNT CONTEXT
+    ===================================================== */
+
+    const getAuthContext = () => {
+
+        if (
+            !state.ready ||
+            !window.EMSAuth
+        ) {
+
+            return null;
+
+        }
+
+        /*
+         * This context is for frontend presentation.
+         * It is not a substitute for backend checks.
+         */
+
+        return window.EMSAuth.getContext();
+
+    };
+
+
+    /* =====================================================
+       07. PUBLIC CONFIGURATION INFORMATION
+    ===================================================== */
+
+    const getPublicInfo = () => {
+
+        if (
+            !state.ready ||
+            !state.publicInfo
+        ) {
+
+            return null;
+
+        }
+
+        return state.publicInfo;
+
+    };
+
+
+    /* =====================================================
+       08. SERVICE STATUS
     ===================================================== */
 
     const isReady = () => {
@@ -389,33 +408,8 @@
     };
 
 
-    const getPublicInfo = () => {
-
-        if (!state.ready) {
-
-            return null;
-
-        }
-
-
-        /*
-         * Return only minimal public integration
-         * information, never authentication tokens.
-         */
-
-        return {
-
-            projectId: state.configuration.projectId,
-
-            apiBase: state.configuration.apiBase
-
-        };
-
-    };
-
-
     /* =====================================================
-       09. PUBLIC MODULE INTERFACE
+       09. PUBLIC SERVICE INTERFACE
     ===================================================== */
 
     window.EMSFirebase = Object.freeze({
