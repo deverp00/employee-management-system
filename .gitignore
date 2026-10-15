@@ -1,0 +1,171 @@
+# =========================================================
+# EMPLOYEE MANAGEMENT & PAYROLL SYSTEM
+# FILE: .gitignore
+# =========================================================
+
+
+# ---------------------------------------------------------
+# 01. ENVIRONMENT FILES
+# ---------------------------------------------------------
+
+.env
+.env.*
+!.env.example
+
+*.local
+*.secret
+*.secrets
+
+
+# ---------------------------------------------------------
+# 02. FIREBASE PRIVATE CREDENTIALS
+# ---------------------------------------------------------
+
+serviceAccountKey.json
+service-account.json
+firebase-adminsdk*.json
+firebase-service-account*.json
+
+**/serviceAccountKey.json
+**/service-account.json
+**/firebase-adminsdk*.json
+
+.firebase/
+firebase-debug.log
+firestore-debug.log
+database-debug.log
+ui-debug.log
+
+
+# ---------------------------------------------------------
+# 03. PRIVATE KEYS AND CERTIFICATES
+# ---------------------------------------------------------
+
+*.pem
+*.key
+*.p12
+*.pfx
+
+private/
+secrets/
+credentials/
+
+
+# ---------------------------------------------------------
+# 04. LOCAL RUNTIME CONFIGURATION
+# ---------------------------------------------------------
+
+runtime-config.local.js
+firebase-config.local.js
+
+config.local.json
+config.private.json
+
+# Production-safe runtime configuration must be
+# generated/deployed through the approved setup.
+
+
+# ---------------------------------------------------------
+# 05. CLOUDFLARE
+# ---------------------------------------------------------
+
+.dev.vars
+.dev.vars.*
+.wrangler/
+
+# Do not ignore wrangler.jsonc or wrangler.toml.
+# They may contain public deployment configuration.
+# Private values belong in Cloudflare Secrets.
+
+
+# ---------------------------------------------------------
+# 06. DEPENDENCIES AND BUILD OUTPUT
+# ---------------------------------------------------------
+
+node_modules/
+dist/
+build/
+coverage/
+
+.cache/
+.tmp/
+temp/
+
+
+# ---------------------------------------------------------
+# 07. DEBUG AND LOG FILES
+# ---------------------------------------------------------
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+logs/
+
+
+# ---------------------------------------------------------
+# 08. EDITOR FILES
+# ---------------------------------------------------------
+
+.vscode/*
+!.vscode/extensions.json
+
+.idea/
+
+*.swp
+*.swo
+*~
+
+
+# ---------------------------------------------------------
+# 09. OPERATING SYSTEM FILES
+# ---------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+$RECYCLE.BIN/
+
+
+# ---------------------------------------------------------
+# 10. LOCAL DATABASE / TEST DATA
+# ---------------------------------------------------------
+
+*.sqlite
+*.sqlite3
+*.db
+
+test-data.local.json
+mock-data.local.json
+
+
+# ---------------------------------------------------------
+# 11. GENERATED PRIVATE DOCUMENTS
+# ---------------------------------------------------------
+
+private-exports/
+private-reports/
+private-payslips/
+private-backups/
+
+*.backup
+*.bak
+
+
+# ---------------------------------------------------------
+# 12. PYTHON CACHE
+# ---------------------------------------------------------
+
+__pycache__/
+*.py[cod]
+
+.venv/
+venv/
+
+
+# =========================================================
+# END OF FILE
+# =========================================================
