@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Employee Management & Payroll System">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="color-scheme" content="light only">
+    <title>Employee Management &amp; Payroll System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <a class="skip-link" href="#app-content">Skip to main content</a>
+
+    <!--
+        Bootstrap state. Visible until js/app.js confirms an authenticated
+        session and successfully resolves the authorization context from the
+        Cloudflare Worker. If bootstrap fails (network, session expired,
+        account disabled, not provisioned), this element is updated in place
+        with an appropriate message and action. It is never a blank white
+        page: a loading indicator is shown from the first paint.
+    -->
+    <div class="login-shell" id="app-bootstrap" role="status" aria-live="polite">
+        <div class="state">
+            <div class="spinner spinner-lg" id="app-bootstrap-spinner" aria-hidden="true"></div>
+            <p class="state-title" id="app-bootstrap-title">Preparing your workspace</p>
+            <p class="state-message" id="app-bootstrap-message">
+                Verifying your session and loading your portal.
+            </p>
+            <div class="state-actions" id="app-bootstrap-actions" hidden></div>
+        </div>
+    </div>
+
+    <!--
+        The application shell. Hidden until js/app.js has successfully
+        resolved the authorization context. Every element that displays
+        role-specific or user-specific information starts empty and is
+        populated from the backend-verified context, never from any value
+        supplied by the login page.
+    -->
+    <div class="app-shell" id="app-shell" hidden>
+
+        <!-- Sidebar navigation -->
+        <aside
+            class="app-sidebar"
+            id="app-sidebar"
+            aria-label="Primary navigation"
+        >
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <div class="sidebar-brand-name">
+                        Employee Management
+                    </div>
+                    <div
+                        class="sidebar-brand-org"
+                        id="sidebar-org-name"
+                    ></div>
+                </div>
+                <button
+                    type="button"
+                    class="sidebar-close"
+                    id="sidebar-close"
+                    aria-label="Close navigation menu"
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                    >
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="sidebar-portal">
+                <div class="sidebar-portal-label">Portal</div>
+                <div
+                    class="sidebar-portal-title"
+                    id="sidebar-portal-title"
+                    aria-live="polite"
+                ></div>
+            </div>
+
+            <nav class="nav" aria-label="Modules">
+                <ul
+                    class="nav-list"
+                    id="sidebar-nav-list"
+                ></ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div
+                        class="sidebar-user-name"
+                        id="sidebar-user-name"
+                    ></div>
+                    <div
+                        class="sidebar-user-role"
+                        id="sidebar-user-role"
+                    ></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Mobile drawer backdrop -->
+        <div
+            class="app-backdrop"
+            id="app-backdrop"
+            aria-hidden="true"
+        ></div>
+
+        <!-- Top header -->
+        <header class="app-header">
+            <button
+                type="button"
+                class="header-menu-btn"
+                id="header-menu-btn"
+                aria-label="Open navigation menu"
+                aria-controls="app-sidebar"
+                aria-expanded="false"
+            >
+                <svg
+                    class="menu-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
+            <div class="header-title-block">
+                <div
+                    class="header-portal-title"
+                    id="header-portal-title"
+                    aria-live="polite"
+                ></div>
+                <div
+                    class="header-org-name"
+                    id="header-org-name"
+                ></div>
+            </div>
+
+            <div class="header-actions">
+                <span
+                    class="header-user-chip"
+                    id="header-user-chip"
+                    title="Signed in"
+                >
+                    <span
+                        class="header-user-name"
+                        id="header-user-name"
+                    ></span>
+                </span>
+                <button
+                    type="button"
+                    class="btn btn-secondary btn-sm"
+                    id="header-signout"
+                >
+                    Sign out
+                </button>
+            </div>
+        </header>
+
+        <!-- Main content area -->
+        <main class="app-main" id="app-main">
+            <div
+                class="app-content"
+                id="app-content"
+                tabindex="-1"
+            >
+                <nav
+                    class="breadcrumbs"
+                    id="app-breadcrumbs"
+                    aria-label="Breadcrumb"
+                    hidden
+                ></nav>
+                <div class="app-content-inner" id="app-content-inner"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast host, always present regardless of shell visibility -->
+    <div
+        id="toast-container"
+        class="toast-container"
+        aria-live="polite"
+        aria-atomic="true"
+    ></div>
+
+    <noscript>
+        <p class="auth-alert" role="alert">
+            JavaScript is required to use this application.
+        </p>
+    </noscript>
+
+    <!--
+        Shell bootstrap. Loads js/app.js as a module. If the module fails to
+        load — network error, syntax error, misconfigured deployment — the
+        bootstrap state is updated to show a clear, non-deceptive message
+        instead of leaving the user staring at a perpetual spinner.
+    -->
+    <script type="module">
+        const bootstrapTitle   = document.getElementById('app-bootstrap-title');
+        const bootstrapMessage = document.getElementById('app-bootstrap-message');
+        const bootstrapSpinner = document.getElementById('app-bootstrap-spinner');
+        const bootstrapActions = document.getElementById('app-bootstrap-actions');
+
+        function showBootstrapError(title, message) {
+            if (bootstrapSpinner) bootstrapSpinner.hidden = true;
+            if (bootstrapTitle)   bootstrapTitle.textContent = title;
+            if (bootstrapMessage) bootstrapMessage.textContent = message;
+            if (bootstrapActions) {
+                bootstrapActions.hidden = false;
+                bootstrapActions.innerHTML = '';
+
+                const reloadBtn = document.createElement('button');
+                reloadBtn.type = 'button';
+                reloadBtn.className = 'btn btn-primary';
+                reloadBtn.textContent = 'Reload page';
+                reloadBtn.addEventListener('click', () => {
+                    window.location.reload();
+                });
+
+                const signInLink = document.createElement('a');
+                signInLink.href = './index.html';
+                signInLink.className = 'btn btn-secondary';
+                signInLink.textContent = 'Return to sign in';
+
+                bootstrapActions.appendChild(reloadBtn);
+                bootstrapActions.appendChild(signInLink);
+            }
+        }
+
+        import('./js/app.js').catch(() => {
+            showBootstrapError(
+                'Unable to start the application',
+                'The application failed to load. Reload the page to try again, or return to the sign in page.'
+            );
+        });
+    </script>
+</body>
+</html>
