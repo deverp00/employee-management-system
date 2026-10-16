@@ -1817,6 +1817,567 @@ async function handleEmployeeStatusUpdate(request, env, requestId, corsHeaders, 
     return jsonResponse(shapeEmployeeFull(updated, { includeBank: true }), 200, corsHeaders, requestId);
 }
 
+/* ----------------------------------------------------------------------------
+ * Attendance — validation and shaping
+ * ------------------------------------------------------------------------- */
+
+const ATTENDANCE_STATUSES = ['present', 'absent', 'leave', 'half_day', 'holiday'];
+
+function isValidAttendanceStatus(v) {
+    return typeof v === 'string' && ATTENDANCE_STATUSES.includes(v);
+}
+
+function isValidTimeHHMM(v) {
+    if (typeof v !== 'string') return false;
+    return /^([01]\d|2[0-3]):[0-5]\d$/.test(v);
+}
+
+function normalizeDate(v) {
+    if (typeof v !== 'string') return '';
+    const s = v.trim();
+    if (!isValidISODate(s)) return '';
+    return s;
+}
+
+function shapeAttendanceRecord(rec) {
+    if (!rec || typeof rec !== 'object') return null;
+    return {
+        status:      String(rec.status || ''),
+        checkIn:     String(rec.checkIn || ''),
+        checkOut:    String(rec.checkOut || ''),
+        hoursWorked: Number(rec.hoursWorked) || 0,
+        note:        String(rec.note || ''),
+        markedBy:    String(rec.markedBy || ''),
+        markedAt:    String(rec.markedAt || ''),
+        updatedAt:   String(rec.updatedAt || ''),
+        updatedBy:   String(rec.updatedBy || ''),
+    };
+}
+
+function validateAttendancePayload(body) {
+    const errors = {};
+    const cleaned = {};
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return { ok: false, errors: { _root: 'Request body must be a JSON object.' } };
+    }
+
+    const status = String(body.status || '').trim().toLowerCase();
+    if (!status) errors.status = 'Status is required.';
+    else if (!isValidAttendanceStatus(status)) errors.status = 'Select a valid status.';
+    else cleaned.status = status;
+
+    if (body.checkIn !== undefined && body.checkIn !== null && body.checkIn !== '') {
+        const v = String(body.checkIn).trim();
+        if (!isValidTimeHHMM(v)) errors.checkIn = 'Check-in must be HH:MM (24-hour).';
+        else cleaned.checkIn = v;
+    } else {
+        cleaned.checkIn = '';
+    }
+
+    if (body.checkOut !== undefined && body.checkOut !== null && body.checkOut !== '') {
+        const v = String(body.checkOut).trim();
+        if (!isValidTimeHHMM(v)) errors.checkOut = 'Check-out must be HH:MM (24-hour).';
+        else cleaned.checkOut = v;
+    } else {
+        cleaned.checkOut = '';
+    }
+
+    if (body.note !== undefined) {
+        cleaned.note = normalizeOptionalString(body.note, 250);
+    } else {
+        cleaned.note = '';
+    }
+
+    // If both check-in and check-out are provided, compute hours worked.
+    // This is a convenience for reporting; the client may not always provide
+    // them. Values are stored as decimal hours rounded to two places.
+    if (cleaned.checkIn && cleaned.checkOut) {
+        const [ih, im] = cleaned.checkIn.split(':').map(Number);
+        const [oh, om] = cleaned.checkOut.split(':').map(Number);
+        let minutes = (oh * 60 + om) - (ih * 60 + im);
+        if (minutes < 0) minutes += 24 * 60; // overnight shift
+        cleaned.hoursWorked = Math.round((minutes / 60) * 100) / 100;
+    } else {
+        cleaned.hoursWorked = 0;
+    }
+
+    if (Object.keys(errors).length > 0) return { ok: false, errors };
+    return { ok: true, cleaned };
+}
+
+/* ----------------------------------------------------------------------------
+ * Attendance — handlers
+ * ------------------------------------------------------------------------- */
+
+async function handleAttendanceList(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    const url = new URL(request.url);
+    const from = normalizeDate(url.searchParams.get('from') || '');
+    const to   = normalizeDate(url.searchParams.get('to') || '');
+    const filterEmployee = String(url.searchParams.get('employeeId') || '').trim();
+    const statusFilter = String(url.searchParams.get('status') || '').trim().toLowerCase();
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
+    const pageSize = Math.min(200, Math.max(1, parseInt(url.searchParams.get('pageSize') || '50', 10) || 50));
+
+    // Employee scope: an employee can only see their own attendance.
+    let employeeScope = null;
+    if (ctx.role === 'employee') {
+        if (!ctx.employeeId) {
+            return errorResponse('forbidden', 403, corsHeaders, requestId);
+        }
+        employeeScope = ctx.employeeId;
+    } else if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    if (!from || !to) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId, {
+            fields: { from: 'from and to dates are required.' },
+        });
+    }
+    if (from > to) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId, {
+            fields: { to: 'to must be on or after from.' },
+        });
+    }
+
+    // Determine which employees to include.
+    let targetEmployeeIds = [];
+    if (employeeScope) {
+        targetEmployeeIds = [employeeScope];
+    } else if (filterEmployee && filterEmployee !== 'all') {
+        targetEmployeeIds = [filterEmployee];
+    } else {
+        // Fetch the employee directory to enumerate.
+        let all;
+        let accessToken;
+        try {
+            accessToken = await getServiceAccountAccessToken(env);
+            all = await rtdbGet(env, accessToken, '/employees');
+        } catch (_e) {
+            return errorResponse('server_error', 500, corsHeaders, requestId);
+        }
+        const raw = (all && typeof all === 'object' && !Array.isArray(all)) ? all : {};
+        targetEmployeeIds = Object.keys(raw);
+    }
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    // Fetch attendance per employee within the date range.
+    // Bounded concurrency. For small-to-medium organizations this is
+    // acceptable; see the Known Limitations section of the README.
+    const CONCURRENCY = 20;
+    const rows = [];
+
+    for (let i = 0; i < targetEmployeeIds.length; i += CONCURRENCY) {
+        const batch = targetEmployeeIds.slice(i, i + CONCURRENCY);
+        const perEmployee = await Promise.all(batch.map(async (id) => {
+            try {
+                const raw = await rtdbGet(env, accessToken, `/attendance/${encodeURIComponent(id)}`);
+                return { id, raw };
+            } catch (_e) {
+                return { id, raw: null };
+            }
+        }));
+
+        for (const entry of perEmployee) {
+            const rec = entry.raw;
+            if (!rec || typeof rec !== 'object') continue;
+
+            for (const dateKey of Object.keys(rec)) {
+                if (!isValidISODate(dateKey)) continue;
+                if (from && dateKey < from) continue;
+                if (to && dateKey > to) continue;
+
+                const shaped = shapeAttendanceRecord(rec[dateKey]);
+                if (!shaped) continue;
+                if (statusFilter && shaped.status !== statusFilter) continue;
+
+                rows.push({ employeeId: entry.id, date: dateKey, ...shaped });
+            }
+        }
+    }
+
+    rows.sort((a, b) => {
+        if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+        return a.employeeId.localeCompare(b.employeeId);
+    });
+
+    const total = rows.length;
+    const start = (page - 1) * pageSize;
+    const slice = rows.slice(start, start + pageSize);
+
+    return jsonResponse({
+        items: slice,
+        total,
+        page,
+        pageSize,
+    }, 200, corsHeaders, requestId);
+}
+
+async function handleAttendanceSummary(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    const url = new URL(request.url);
+    const from = normalizeDate(url.searchParams.get('from') || '');
+    const to   = normalizeDate(url.searchParams.get('to') || '');
+
+    if (!from || !to) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId, {
+            fields: { from: 'from and to dates are required.' },
+        });
+    }
+    if (from > to) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId, {
+            fields: { to: 'to must be on or after from.' },
+        });
+    }
+
+    // Employee scope enforcement.
+    let employeeScope = null;
+    if (ctx.role === 'employee') {
+        if (!ctx.employeeId) return errorResponse('forbidden', 403, corsHeaders, requestId);
+        employeeScope = ctx.employeeId;
+    } else if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const filterEmployee = String(url.searchParams.get('employeeId') || '').trim();
+
+    let targetEmployeeIds = [];
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    if (employeeScope) {
+        targetEmployeeIds = [employeeScope];
+    } else if (filterEmployee && filterEmployee !== 'all') {
+        targetEmployeeIds = [filterEmployee];
+    } else {
+        let all;
+        try {
+            all = await rtdbGet(env, accessToken, '/employees');
+        } catch (_e) {
+            return errorResponse('server_error', 500, corsHeaders, requestId);
+        }
+        const raw = (all && typeof all === 'object' && !Array.isArray(all)) ? all : {};
+        targetEmployeeIds = Object.keys(raw);
+    }
+
+    const counts = { present: 0, absent: 0, leave: 0, half_day: 0, holiday: 0, notMarked: 0 };
+
+    const CONCURRENCY = 20;
+    for (let i = 0; i < targetEmployeeIds.length; i += CONCURRENCY) {
+        const batch = targetEmployeeIds.slice(i, i + CONCURRENCY);
+        const results = await Promise.all(batch.map(async (id) => {
+            try {
+                return await rtdbGet(env, accessToken, `/attendance/${encodeURIComponent(id)}`);
+            } catch (_e) {
+                return null;
+            }
+        }));
+
+        for (const rec of results) {
+            if (!rec || typeof rec !== 'object') {
+                counts.notMarked += countWorkingDays(from, to);
+                continue;
+            }
+            const workingDays = countWorkingDays(from, to);
+            let marked = 0;
+            for (const dateKey of Object.keys(rec)) {
+                if (!isValidISODate(dateKey)) continue;
+                if (dateKey < from || dateKey > to) continue;
+                const s = String(rec[dateKey] && rec[dateKey].status || '').toLowerCase();
+                if (counts[s] !== undefined) counts[s] += 1;
+                marked += 1;
+            }
+            counts.notMarked += Math.max(0, workingDays - marked);
+        }
+    }
+
+    return jsonResponse({
+        from, to,
+        employees: targetEmployeeIds.length,
+        counts,
+    }, 200, corsHeaders, requestId);
+}
+
+/**
+ * Marks a single attendance record. Admins only; employees cannot mark
+ * attendance through this API. The endpoint is idempotent: marking the same
+ * employee and date twice overwrites the record, and the audit entry records
+ * the change.
+ */
+async function handleAttendanceMark(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const body = await readJsonBody(request);
+    if (!body.ok) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    const data = body.data || {};
+    const employeeId = String(data.employeeId || '').trim();
+    const date = normalizeDate(data.date);
+
+    if (!employeeId) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: { employeeId: 'Employee is required.' },
+        });
+    }
+    if (!date) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: { date: 'A valid date (YYYY-MM-DD) is required.' },
+        });
+    }
+
+    const validated = validateAttendancePayload(data);
+    if (!validated.ok) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: validated.errors,
+        });
+    }
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    // Confirm the employee exists.
+    let employee;
+    try {
+        employee = await rtdbGet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}`);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+    if (!employee || typeof employee !== 'object') {
+        return errorResponse('not_found', 404, corsHeaders, requestId);
+    }
+
+    const now = new Date().toISOString();
+    const record = {
+        status:      validated.cleaned.status,
+        checkIn:     validated.cleaned.checkIn,
+        checkOut:    validated.cleaned.checkOut,
+        hoursWorked: validated.cleaned.hoursWorked,
+        note:        validated.cleaned.note,
+        markedBy:    ctx.uid,
+        markedAt:    now,
+        updatedAt:   now,
+        updatedBy:   ctx.uid,
+    };
+
+    try {
+        await rtdbSet(env, accessToken, `/attendance/${encodeURIComponent(employeeId)}/${date}`, record);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    return jsonResponse({ employeeId, date, ...record }, 200, corsHeaders, requestId);
+}
+
+/**
+ * Bulk marking. Accepts { date, records: [{ employeeId, status, ... }] }.
+ * Each record is validated and written. Partial failures are reported
+ * individually — successful writes are kept, failures are returned in
+ * the response so the UI can retry only the failed subset.
+ */
+async function handleAttendanceBulk(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const body = await readJsonBody(request);
+    if (!body.ok || !body.data || typeof body.data !== 'object') {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    const date = normalizeDate(body.data.date);
+    if (!date) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: { date: 'A valid date (YYYY-MM-DD) is required.' },
+        });
+    }
+
+    const records = Array.isArray(body.data.records) ? body.data.records : [];
+    if (records.length === 0) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: { records: 'At least one record is required.' },
+        });
+    }
+    if (records.length > 500) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    const now = new Date().toISOString();
+    const written = [];
+    const failed = [];
+
+    for (const rec of records) {
+        const employeeId = String(rec && rec.employeeId || '').trim();
+        if (!employeeId) {
+            failed.push({ employeeId: '', error: 'employeeId is required.' });
+            continue;
+        }
+
+        const validated = validateAttendancePayload(rec);
+        if (!validated.ok) {
+            failed.push({ employeeId, error: 'Invalid attendance payload.', fields: validated.errors });
+            continue;
+        }
+
+        const record = {
+            status:      validated.cleaned.status,
+            checkIn:     validated.cleaned.checkIn,
+            checkOut:    validated.cleaned.checkOut,
+            hoursWorked: validated.cleaned.hoursWorked,
+            note:        validated.cleaned.note,
+            markedBy:    ctx.uid,
+            markedAt:    now,
+            updatedAt:   now,
+            updatedBy:   ctx.uid,
+        };
+
+        try {
+            await rtdbSet(env, accessToken, `/attendance/${encodeURIComponent(employeeId)}/${date}`, record);
+            written.push(employeeId);
+        } catch (_e) {
+            failed.push({ employeeId, error: 'Write failed.' });
+        }
+    }
+
+    return jsonResponse({
+        date,
+        written,
+        failed,
+        writtenCount: written.length,
+        failedCount: failed.length,
+    }, 200, corsHeaders, requestId);
+}
+
+/**
+ * Corrects an existing attendance record. Admins only. The correction
+ * requires the record to already exist — this endpoint is not used for
+ * initial marking.
+ */
+async function handleAttendanceCorrect(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const employeeId = params && params.employeeId ? String(params.employeeId) : '';
+    const date = params && params.date ? normalizeDate(params.date) : '';
+    if (!employeeId || !date) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    const body = await readJsonBody(request);
+    if (!body.ok) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    const validated = validateAttendancePayload(body.data);
+    if (!validated.ok) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: validated.errors,
+        });
+    }
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    let existing;
+    try {
+        existing = await rtdbGet(env, accessToken, `/attendance/${encodeURIComponent(employeeId)}/${date}`);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+    if (!existing || typeof existing !== 'object') {
+        return errorResponse('not_found', 404, corsHeaders, requestId);
+    }
+
+    const now = new Date().toISOString();
+    const record = {
+        status:      validated.cleaned.status,
+        checkIn:     validated.cleaned.checkIn,
+        checkOut:    validated.cleaned.checkOut,
+        hoursWorked: validated.cleaned.hoursWorked,
+        note:        validated.cleaned.note,
+        markedBy:    existing.markedBy || ctx.uid,
+        markedAt:    existing.markedAt || now,
+        updatedAt:   now,
+        updatedBy:   ctx.uid,
+    };
+
+    try {
+        await rtdbSet(env, accessToken, `/attendance/${encodeURIComponent(employeeId)}/${date}`, record);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    return jsonResponse({ employeeId, date, ...record }, 200, corsHeaders, requestId);
+}
+
+/**
+ * Counts working days between two ISO dates (inclusive), Monday–Saturday.
+ * Sunday is treated as a non-working day.
+ *
+ * Note: this is a placeholder for the working-week configuration. If the
+ * organization works Monday–Friday, this must be changed. The setting will
+ * become configurable in a later phase. See Known Limitations in README.
+ */
+function countWorkingDays(fromISO, toISO) {
+    if (!isValidISODate(fromISO) || !isValidISODate(toISO)) return 0;
+    const from = new Date(fromISO + 'T00:00:00Z');
+    const to = new Date(toISO + 'T00:00:00Z');
+    if (from > to) return 0;
+    let count = 0;
+    const cursor = new Date(from.getTime());
+    while (cursor <= to) {
+        const dow = cursor.getUTCDay(); // 0 = Sunday
+        if (dow !== 0) count += 1;
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    return count;
+}
+
 /* ============================================================================
  * 13. Router
  * ========================================================================= */
@@ -1853,6 +2414,33 @@ function matchRoute(method, pathname) {
     if (parts.length === 3 && parts[0] === 'employees' && parts[2] === 'status') {
         const employeeId = decodeURIComponent(parts[1]);
         if (method === 'PATCH') return { name: 'employeeStatusUpdate', requiresAuth: true, params: { employeeId } };
+    }
+
+    // /attendance                       -> list (GET)
+    if (parts.length === 1 && parts[0] === 'attendance') {
+        if (method === 'GET') return { name: 'attendanceList', requiresAuth: true };
+    }
+
+    // /attendance/summary               -> summary (GET)
+    if (parts.length === 2 && parts[0] === 'attendance' && parts[1] === 'summary') {
+        if (method === 'GET') return { name: 'attendanceSummary', requiresAuth: true };
+    }
+
+    // /attendance/mark                  -> mark single (POST)
+    if (parts.length === 2 && parts[0] === 'attendance' && parts[1] === 'mark') {
+        if (method === 'POST') return { name: 'attendanceMark', requiresAuth: true };
+    }
+
+    // /attendance/bulk                  -> mark multiple (POST)
+    if (parts.length === 2 && parts[0] === 'attendance' && parts[1] === 'bulk') {
+        if (method === 'POST') return { name: 'attendanceBulk', requiresAuth: true };
+    }
+
+    // /attendance/:employeeId/:date     -> correct (PATCH)
+    if (parts.length === 3 && parts[0] === 'attendance') {
+        const employeeId = decodeURIComponent(parts[1]);
+        const date = decodeURIComponent(parts[2]);
+        if (method === 'PATCH') return { name: 'attendanceCorrect', requiresAuth: true, params: { employeeId, date } };
     }
 
     return null;
@@ -1926,6 +2514,16 @@ export default {
                     return await handleEmployeeUpdate(request, env, requestId, corsHeaders, route.params);
                 case 'employeeStatusUpdate':
                     return await handleEmployeeStatusUpdate(request, env, requestId, corsHeaders, route.params);
+                case 'attendanceList':
+                    return await handleAttendanceList(request, env, requestId, corsHeaders);
+                case 'attendanceSummary':
+                    return await handleAttendanceSummary(request, env, requestId, corsHeaders);
+                case 'attendanceMark':
+                    return await handleAttendanceMark(request, env, requestId, corsHeaders);
+                case 'attendanceBulk':
+                    return await handleAttendanceBulk(request, env, requestId, corsHeaders);
+                case 'attendanceCorrect':
+                    return await handleAttendanceCorrect(request, env, requestId, corsHeaders, route.params);
                 default:
                     return errorResponse('not_found', 404, corsHeaders, requestId);
             }
