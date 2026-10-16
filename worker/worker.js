@@ -1559,16 +1559,18 @@ function validateEmployeePayload(body, options) {
 
 function shapeEmployeeListItem(rec) {
     return {
-        employeeId:     String(rec.employeeId || ''),
-        employeeCode:   String(rec.employeeCode || ''),
-        firstName:      String(rec.firstName || ''),
-        lastName:       String(rec.lastName || ''),
-        email:          String(rec.email || ''),
-        departmentId:   rec.departmentId ? String(rec.departmentId) : null,
-        designationId:  rec.designationId ? String(rec.designationId) : null,
-        status:         String(rec.status || ''),
-        joinDate:       String(rec.joinDate || ''),
-        employmentType: String(rec.employmentType || ''),
+        employeeId:       String(rec.employeeId || ''),
+        employeeCode:     String(rec.employeeCode || ''),
+        firstName:        String(rec.firstName || ''),
+        lastName:         String(rec.lastName || ''),
+        email:            String(rec.email || ''),
+        departmentId:     rec.departmentId ? String(rec.departmentId) : null,
+        designationId:    rec.designationId ? String(rec.designationId) : null,
+        status:           String(rec.status || ''),
+        joinDate:         String(rec.joinDate || ''),
+        employmentType:   String(rec.employmentType || ''),
+        uid:              rec.uid ? String(rec.uid) : null,
+        activationStatus: String(rec.activationStatus || 'active'),
     };
 }
 
@@ -1579,12 +1581,14 @@ function shapeEmployeeListItem(rec) {
 function shapeEmployeeFull(rec, options) {
     const includeBank = !!(options && options.includeBank);
     const out = Object.assign(shapeEmployeeListItem(rec), {
-        uid:              rec.uid ? String(rec.uid) : null,
         phone:            String(rec.phone || ''),
         dateOfBirth:      String(rec.dateOfBirth || ''),
         gender:           String(rec.gender || ''),
         address:          String(rec.address || ''),
         emergencyContact: String(rec.emergencyContact || ''),
+        invitedAt:        String(rec.invitedAt || ''),
+        activatedAt:      String(rec.activatedAt || ''),
+        lastInviteAt:     String(rec.lastInviteAt || ''),
         createdAt:        String(rec.createdAt || ''),
         updatedAt:        String(rec.updatedAt || ''),
         createdBy:        String(rec.createdBy || ''),
