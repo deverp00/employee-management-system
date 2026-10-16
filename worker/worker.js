@@ -2720,6 +2720,384 @@ async function handleAttendanceCorrect(request, env, requestId, corsHeaders, par
  * organization works Monday–Friday, this must be changed. The setting will
  * become configurable in a later phase. See Known Limitations in README.
  */
+/* ----------------------------------------------------------------------------
+ * Leave — validation and shaping
+ * ------------------------------------------------------------------------- */
+
+const LEAVE_TYPES = ['casual', 'sick', 'earned', 'unpaid', 'other'];
+const LEAVE_STATUSES = ['pending', 'approved', 'rejected', 'cancelled'];
+
+function shapeLeaveRequest(rec) {
+    return {
+        requestId:  String(rec.requestId || ''),
+        employeeId: String(rec.employeeId || ''),
+        leaveType:  String(rec.leaveType || ''),
+        fromDate:   String(rec.fromDate || ''),
+        toDate:     String(rec.toDate || ''),
+        days:       Number(rec.days) || 0,
+        reason:     String(rec.reason || ''),
+        status:     String(rec.status || 'pending'),
+        appliedAt:  String(rec.appliedAt || ''),
+        reviewedBy: String(rec.reviewedBy || ''),
+        reviewedAt: String(rec.reviewedAt || ''),
+        reviewNote: String(rec.reviewNote || ''),
+    };
+}
+
+function validateLeavePayload(body) {
+    const errors = {};
+    const cleaned = {};
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return { ok: false, errors: { _root: 'Request body must be a JSON object.' } };
+    }
+
+    const leaveType = String(body.leaveType || '').trim().toLowerCase();
+    if (!leaveType) errors.leaveType = 'Leave type is required.';
+    else if (!LEAVE_TYPES.includes(leaveType)) errors.leaveType = 'Select a valid leave type.';
+    else cleaned.leaveType = leaveType;
+
+    const fromDate = String(body.fromDate || '').trim();
+    if (!fromDate) errors.fromDate = 'From date is required.';
+    else if (!isValidISODate(fromDate)) errors.fromDate = 'Enter a valid date.';
+    else cleaned.fromDate = fromDate;
+
+    const toDate = String(body.toDate || '').trim();
+    if (!toDate) errors.toDate = 'To date is required.';
+    else if (!isValidISODate(toDate)) errors.toDate = 'Enter a valid date.';
+    else cleaned.toDate = toDate;
+
+    if (cleaned.fromDate && cleaned.toDate && cleaned.fromDate > cleaned.toDate) {
+        errors.toDate = 'To date must be on or after from date.';
+    }
+
+    const reason = normalizeOptionalString(body.reason, 500);
+    if (!reason) errors.reason = 'Reason is required.';
+    else cleaned.reason = reason;
+
+    if (Object.keys(errors).length > 0) return { ok: false, errors };
+
+    // Calculate days as the number of working days in the range, inclusive.
+    cleaned.days = countWorkingDays(cleaned.fromDate, cleaned.toDate);
+
+    return { ok: true, cleaned };
+}
+
+async function handleLeaveList(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    const url = new URL(request.url);
+    const status = String(url.searchParams.get('status') || '').trim().toLowerCase();
+    const employeeId = String(url.searchParams.get('employeeId') || '').trim();
+    const filterEmployee = String(url.searchParams.get('filterEmployee') || '').trim();
+
+    let scope = null;
+    if (ctx.role === 'employee') {
+        if (!ctx.employeeId) return errorResponse('forbidden', 403, corsHeaders, requestId);
+        scope = ctx.employeeId;
+    } else if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    let accessToken;
+    try { accessToken = await getServiceAccountAccessToken(env); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    let all;
+    try { all = await rtdbGet(env, accessToken, '/leaveRequests'); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    const raw = (all && typeof all === 'object' && !Array.isArray(all)) ? all : {};
+    let items = Object.values(raw).filter((r) => r && typeof r === 'object').map(shapeLeaveRequest);
+
+    if (scope) items = items.filter((r) => r.employeeId === scope);
+    else if (filterEmployee) items = items.filter((r) => r.employeeId === filterEmployee);
+    else if (employeeId) items = items.filter((r) => r.employeeId === employeeId);
+
+    if (status) items = items.filter((r) => r.status === status);
+
+    items.sort((a, b) => String(b.appliedAt).localeCompare(String(a.appliedAt)));
+
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get('pageSize') || '25', 10) || 25));
+    const total = items.length;
+    const start = (page - 1) * pageSize;
+
+    return jsonResponse({
+        items: items.slice(start, start + pageSize),
+        total, page, pageSize,
+    }, 200, corsHeaders, requestId);
+}
+
+async function handleLeaveApply(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    const body = await readJsonBody(request);
+    if (!body.ok) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    const validated = validateLeavePayload(body.data);
+    if (!validated.ok) return errorResponse('validation_failed', 422, corsHeaders, requestId, { fields: validated.errors });
+    const clean = validated.cleaned;
+
+    // Employees may only apply for their own leave. Admins may apply on
+    // behalf of an employee by passing employeeId.
+    let targetEmployeeId;
+    if (ctx.role === 'employee') {
+        if (!ctx.employeeId) return errorResponse('forbidden', 403, corsHeaders, requestId);
+        targetEmployeeId = ctx.employeeId;
+    } else if (isAdmin(ctx.role)) {
+        targetEmployeeId = String((body.data && body.data.employeeId) || '').trim();
+        if (!targetEmployeeId) {
+            return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+                fields: { employeeId: 'Employee is required.' },
+            });
+        }
+    } else {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    let accessToken;
+    try { accessToken = await getServiceAccountAccessToken(env); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    // Confirm the employee exists.
+    let employee;
+    try { employee = await rtdbGet(env, accessToken, `/employees/${encodeURIComponent(targetEmployeeId)}`); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+    if (!employee || typeof employee !== 'object') return errorResponse('not_found', 404, corsHeaders, requestId);
+
+    const requestIdValue = (crypto && typeof crypto.randomUUID === 'function')
+        ? crypto.randomUUID()
+        : `lr-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const now = new Date().toISOString();
+    const record = {
+        requestId: requestIdValue,
+        employeeId: targetEmployeeId,
+        leaveType: clean.leaveType,
+        fromDate: clean.fromDate,
+        toDate: clean.toDate,
+        days: clean.days,
+        reason: clean.reason,
+        status: 'pending',
+        appliedAt: now,
+        reviewedBy: '',
+        reviewedAt: '',
+        reviewNote: '',
+    };
+
+    try {
+        await rtdbSet(env, accessToken, `/leaveRequests/${encodeURIComponent(requestIdValue)}`, record);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    return jsonResponse(shapeLeaveRequest(record), 201, corsHeaders, requestId);
+}
+
+async function handleLeaveGet(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    const rid = params && params.requestId ? params.requestId : '';
+    if (!rid) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    let accessToken;
+    try { accessToken = await getServiceAccountAccessToken(env); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    let rec;
+    try { rec = await rtdbGet(env, accessToken, `/leaveRequests/${encodeURIComponent(rid)}`); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+    if (!rec || typeof rec !== 'object') return errorResponse('not_found', 404, corsHeaders, requestId);
+
+    if (ctx.role === 'employee' && rec.employeeId !== ctx.employeeId) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+    if (!isAdmin(ctx.role) && ctx.role !== 'employee') {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    return jsonResponse(shapeLeaveRequest(rec), 200, corsHeaders, requestId);
+}
+
+async function handleLeaveReview(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) return errorResponse('forbidden', 403, corsHeaders, requestId);
+
+    const rid = params && params.requestId ? params.requestId : '';
+    if (!rid) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    const body = await readJsonBody(request);
+    if (!body.ok || !body.data) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    const decision = String(body.data.status || '').trim().toLowerCase();
+    if (!['approved', 'rejected'].includes(decision)) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: { status: 'Decision must be approved or rejected.' },
+        });
+    }
+
+    const note = normalizeOptionalString(body.data.reviewNote, 500);
+
+    let accessToken;
+    try { accessToken = await getServiceAccountAccessToken(env); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    let current;
+    try { current = await rtdbGet(env, accessToken, `/leaveRequests/${encodeURIComponent(rid)}`); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+    if (!current || typeof current !== 'object') return errorResponse('not_found', 404, corsHeaders, requestId);
+
+    if (current.status !== 'pending') {
+        return errorResponse('conflict', 409, corsHeaders, requestId, {
+            fields: { status: 'This request has already been reviewed.' },
+        });
+    }
+
+    const now = new Date().toISOString();
+    const updated = Object.assign({}, current, {
+        status: decision,
+        reviewedBy: ctx.uid,
+        reviewedAt: now,
+        reviewNote: note,
+    });
+
+    try {
+        await rtdbSet(env, accessToken, `/leaveRequests/${encodeURIComponent(rid)}`, updated);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    // Update the leave balance if approved. This is a simple adjustment of
+    // the used / remaining counters. Statutory rules and accrual policies
+    // are out of scope for this version — they are configurable in a later
+    // phase.
+    if (decision === 'approved' && updated.employeeId && updated.leaveType && updated.days > 0) {
+        const year = String(updated.fromDate || '').slice(0, 4);
+        if (year) {
+            const balancePath = `/leaveBalances/${encodeURIComponent(updated.employeeId)}/${year}/${updated.leaveType}`;
+            try {
+                const balance = await rtdbGet(env, accessToken, balancePath);
+                const b = (balance && typeof balance === 'object') ? balance : { allocated: 0, used: 0, remaining: 0 };
+                const newUsed = (Number(b.used) || 0) + updated.days;
+                const newRemaining = Math.max(0, (Number(b.allocated) || 0) - newUsed);
+                await rtdbSet(env, accessToken, balancePath, {
+                    allocated: Number(b.allocated) || 0,
+                    used: newUsed,
+                    remaining: newRemaining,
+                });
+            } catch (_e) { /* non-critical */ }
+        }
+    }
+
+    return jsonResponse(shapeLeaveRequest(updated), 200, corsHeaders, requestId);
+}
+
+async function handleLeaveBalancesGet(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    let empId = params && params.employeeId ? params.employeeId : '';
+    const year = params && params.year ? params.year : '';
+
+    if (!empId || !/^\d{4}$/.test(year)) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    if (empId === 'me') empId = ctx.employeeId || '';
+    if (!empId) return errorResponse('not_found', 404, corsHeaders, requestId);
+
+    if (ctx.role === 'employee' && empId !== ctx.employeeId) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+    if (!isAdmin(ctx.role) && ctx.role !== 'employee') {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    let accessToken;
+    try { accessToken = await getServiceAccountAccessToken(env); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    let balances;
+    try { balances = await rtdbGet(env, accessToken, `/leaveBalances/${encodeURIComponent(empId)}/${year}`); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    const out = {};
+    if (balances && typeof balances === 'object' && !Array.isArray(balances)) {
+        for (const [type, b] of Object.entries(balances)) {
+            if (!b || typeof b !== 'object') continue;
+            out[type] = {
+                allocated: Number(b.allocated) || 0,
+                used:      Number(b.used) || 0,
+                remaining: Number(b.remaining) || 0,
+            };
+        }
+    }
+
+    return jsonResponse({ employeeId: empId, year, balances: out }, 200, corsHeaders, requestId);
+}
+
+async function handleLeaveBalancesSet(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) return errorResponse('forbidden', 403, corsHeaders, requestId);
+
+    const empId = params && params.employeeId ? params.employeeId : '';
+    const year = params && params.year ? params.year : '';
+    if (!empId || !/^\d{4}$/.test(year)) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    const body = await readJsonBody(request);
+    if (!body.ok || !body.data) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    const leaveType = String(body.data.leaveType || '').trim().toLowerCase();
+    if (!LEAVE_TYPES.includes(leaveType)) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: { leaveType: 'Select a valid leave type.' },
+        });
+    }
+
+    const allocated = Number(body.data.allocated);
+    if (!Number.isFinite(allocated) || allocated < 0) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: { allocated: 'Allocated days must be a non-negative number.' },
+        });
+    }
+
+    let accessToken;
+    try { accessToken = await getServiceAccountAccessToken(env); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    const path = `/leaveBalances/${encodeURIComponent(empId)}/${year}/${leaveType}`;
+    let existing;
+    try { existing = await rtdbGet(env, accessToken, path); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    const used = existing && typeof existing === 'object' ? (Number(existing.used) || 0) : 0;
+    const remaining = Math.max(0, allocated - used);
+
+    try {
+        await rtdbSet(env, accessToken, path, { allocated, used, remaining });
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    return jsonResponse({ employeeId: empId, year, leaveType, allocated, used, remaining }, 200, corsHeaders, requestId);
+}
+
+/* ----------------------------------------------------------------------------
+ * Attendance — working day counter (used by leave day calculation too)
+ * ------------------------------------------------------------------------- */
+
 function countWorkingDays(fromISO, toISO) {
     if (!isValidISODate(fromISO) || !isValidISODate(toISO)) return 0;
     const from = new Date(fromISO + 'T00:00:00Z');
@@ -2806,6 +3184,27 @@ function matchRoute(method, pathname) {
         if (method === 'PATCH') return { name: 'attendanceCorrect', requiresAuth: true, params: { employeeId, date } };
     }
 
+    // /leave/requests
+    if (parts.length === 2 && parts[0] === 'leave' && parts[1] === 'requests') {
+        if (method === 'GET')  return { name: 'leaveList',   requiresAuth: true };
+        if (method === 'POST') return { name: 'leaveApply',  requiresAuth: true };
+    }
+
+    // /leave/requests/:id
+    if (parts.length === 3 && parts[0] === 'leave' && parts[1] === 'requests') {
+        const requestId = decodeURIComponent(parts[2]);
+        if (method === 'GET')   return { name: 'leaveGet',    requiresAuth: true, params: { requestId } };
+        if (method === 'PATCH') return { name: 'leaveReview', requiresAuth: true, params: { requestId } };
+    }
+
+    // /leave/balances/:employeeId/:year
+    if (parts.length === 4 && parts[0] === 'leave' && parts[1] === 'balances') {
+        const employeeId = decodeURIComponent(parts[2]);
+        const year = decodeURIComponent(parts[3]);
+        if (method === 'GET')   return { name: 'leaveBalancesGet', requiresAuth: true, params: { employeeId, year } };
+        if (method === 'PATCH') return { name: 'leaveBalancesSet', requiresAuth: true, params: { employeeId, year } };
+    }
+
     return null;
 }
 
@@ -2889,6 +3288,18 @@ export default {
                     return await handleAttendanceBulk(request, env, requestId, corsHeaders);
                 case 'attendanceCorrect':
                     return await handleAttendanceCorrect(request, env, requestId, corsHeaders, route.params);
+                case 'leaveList':
+                    return await handleLeaveList(request, env, requestId, corsHeaders);
+                case 'leaveApply':
+                    return await handleLeaveApply(request, env, requestId, corsHeaders);
+                case 'leaveGet':
+                    return await handleLeaveGet(request, env, requestId, corsHeaders, route.params);
+                case 'leaveReview':
+                    return await handleLeaveReview(request, env, requestId, corsHeaders, route.params);
+                case 'leaveBalancesGet':
+                    return await handleLeaveBalancesGet(request, env, requestId, corsHeaders, route.params);
+                case 'leaveBalancesSet':
+                    return await handleLeaveBalancesSet(request, env, requestId, corsHeaders, route.params);
                 default:
                     return errorResponse('not_found', 404, corsHeaders, requestId);
             }
