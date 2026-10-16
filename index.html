@@ -1,291 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="description"
-        content="Secure login for the Employee Management and Payroll System."
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="description" content="Sign in to Employee Management & Payroll System">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-
-    <title>Login | Employee Management & Payroll System</title>
-
-    <!-- Universal Styles -->
+    <meta name="color-scheme" content="light only">
+    <title>Sign In — Employee Management &amp; Payroll System</title>
     <link rel="stylesheet" href="css/style.css">
-
-    <!--
-        Application Loading Order
-
-        1. Public runtime configuration
-        2. Firebase authentication controller
-        3. Shared Firebase service bridge
-        4. Universal interface controller
-
-        runtime-config.js will be created during
-        the next integration step.
-
-        This file must never contain private keys,
-        service-account credentials or backend secrets.
-    -->
-
-<script src="js/runtime-config.js" defer></script>
-<script src="js/auth.js" defer></script>
-<script src="js/firebase-config.js" defer></script>
-<script src="js/script.js" defer></script>
-<script src="js/PAGE-SPECIFIC.js" defer></script>
-
-
 </head>
+<body>
+    <a class="skip-link" href="#login-form">Skip to sign in form</a>
 
-<body class="login-page" data-page="login">
-
-    <main class="login-container">
-
-        <section
-            class="login-card"
-            aria-labelledby="login-title"
-        >
-
-            <!-- =====================================
-                 BRANDING
-            ====================================== -->
-
-            <header class="login-brand">
-
-                <div
-                    class="brand-logo"
-                    aria-hidden="true"
-                >
-                    EM
-                </div>
-
-                <h1 id="login-title">
-                    Employee Management
+    <main class="login-shell">
+        <section class="login-card" aria-labelledby="login-heading">
+            <header class="login-header">
+                <h1 id="login-heading" class="login-brand">
+                    Employee Management &amp; Payroll System
                 </h1>
-
-                <p>
-                    Payroll &amp; Workforce Management System
-                </p>
-
+                <p class="login-subtitle">Sign in to your account</p>
             </header>
 
+            <div class="login-body">
+                <div
+                    id="login-alert"
+                    class="auth-alert"
+                    role="alert"
+                    aria-live="polite"
+                    hidden
+                ></div>
 
-            <!-- =====================================
-                 AUTHENTICATION FORM
-            ====================================== -->
+                <form
+                    id="login-form"
+                    class="form"
+                    autocomplete="on"
+                    novalidate
+                >
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            Email address
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            class="form-input"
+                            autocomplete="email"
+                            inputmode="email"
+                            spellcheck="false"
+                            autocapitalize="off"
+                            autocorrect="off"
+                            required
+                            aria-describedby="email-error"
+                        >
+                        <p
+                            id="email-error"
+                            class="form-error"
+                            hidden
+                        ></p>
+                    </div>
 
-            <form
-                id="loginForm"
-                method="post"
-                autocomplete="on"
-                aria-describedby="loginSecurityNote"
-            >
+                    <div class="form-group">
+                        <label for="password" class="form-label">
+                            Password
+                        </label>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-input"
+                            autocomplete="current-password"
+                            required
+                            minlength="6"
+                            aria-describedby="password-error"
+                        >
+                        <p
+                            id="password-error"
+                            class="form-error"
+                            hidden
+                        ></p>
+                    </div>
 
-                <!-- Account Role -->
-
-                <div class="form-group">
-
-                    <label
-                        for="loginRole"
-                        class="form-label"
-                    >
-                        Login As
-                    </label>
-
-                    <select
-                        id="loginRole"
-                        name="role"
-                        class="form-control"
-                        autocomplete="off"
-                        required
-                    >
-
-                        <option
-                            value=""
-                            selected
+                    <div class="form-actions">
+                        <button
+                            type="submit"
+                            id="login-submit"
+                            class="btn btn-primary btn-block btn-lg"
                             disabled
                         >
-                            Select User Type
-                        </option>
+                            Preparing sign in…
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-                        <option value="super_admin">
-                            Super Admin
-                        </option>
-
-                        <option value="hr_admin">
-                            HR / Admin
-                        </option>
-
-                        <option value="employee">
-                            Employee
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- Email Address -->
-
-                <div class="form-group">
-
-                    <label
-                        for="loginEmail"
-                        class="form-label"
-                    >
-                        Email Address
-                    </label>
-
-                    <input
-                        type="email"
-                        id="loginEmail"
-                        name="email"
-                        class="form-control"
-                        placeholder="Enter your registered email"
-                        autocomplete="username"
-                        inputmode="email"
-                        maxlength="254"
-                        spellcheck="false"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- Password -->
-
-                <div class="form-group">
-
-                    <label
-                        for="loginPassword"
-                        class="form-label"
-                    >
-                        Password
-                    </label>
-
-                    <input
-                        type="password"
-                        id="loginPassword"
-                        name="password"
-                        class="form-control"
-                        placeholder="Enter your password"
-                        autocomplete="current-password"
-                        required
-                    >
-
-                    <span class="form-help">
-                        Enter your registered account credentials.
-                    </span>
-
-                </div>
-
-
-                <!-- Password Visibility -->
-
-                <div class="form-group">
-
-                    <label class="checkbox-group">
-
-                        <input
-                            type="checkbox"
-                            id="showPassword"
-                            name="showPassword"
-                        >
-
-                        <span>
-                            Show Password
-                        </span>
-
-                    </label>
-
-                </div>
-
-
-                <!-- =====================================
-                     AUTHENTICATION FEEDBACK
-                ====================================== -->
-
-                <div
-                    id="loginError"
-                    class="form-error"
-                    role="alert"
-                    aria-live="assertive"
-                    aria-atomic="true"
-                    hidden
-                ></div>
-
-                <div
-                    id="loginStatus"
-                    class="form-help"
-                    role="status"
-                    aria-live="polite"
-                    aria-atomic="true"
-                    hidden
-                ></div>
-
-
-                <!-- Submit -->
-
-                <button
-                    type="submit"
-                    id="loginButton"
-                    class="btn btn-primary btn-lg btn-block"
-                >
-
-                    <span id="loginButtonText">
-                        Login
-                    </span>
-
-                </button>
-
-
-                <!-- Security Information -->
-
-                <p
-                    id="loginSecurityNote"
-                    class="form-help"
-                >
-                    Access is restricted to registered and
-                    authorised accounts. Your assigned role
-                    will be verified after authentication.
-                </p>
-
-            </form>
-
+            <footer class="login-footer">
+                <p><strong>Employee Management &amp; Payroll System</strong></p>
+                <p>Designed and Developed by Yadav Web Technologies</p>
+            </footer>
         </section>
-
-
-        <!-- =========================================
-             FOOTER
-        ========================================== -->
-
-        <footer class="login-footer">
-
-            <p>
-                Authorised Access Only
-            </p>
-
-            <p class="mt-1">
-                Employee Management &amp; Payroll System
-            </p>
-
-            <p class="mt-1">
-                Designed and Developed by Yadav Web Technologies
-            </p>
-
-        </footer>
-
     </main>
 
-</body>
+    <noscript>
+        <p class="auth-alert" role="alert">
+            JavaScript is required to sign in to this application.
+        </p>
+    </noscript>
 
+    <script type="module">
+        (async () => {
+            try {
+                const { initLoginPage } = await import('./js/auth.js');
+                initLoginPage();
+            } catch (error) {
+                const alertEl = document.getElementById('login-alert');
+                if (alertEl) {
+                    alertEl.textContent =
+                        'Unable to initialize the sign in page. Please reload the page.';
+                    alertEl.hidden = false;
+                }
+                const submit = document.getElementById('login-submit');
+                if (submit) {
+                    submit.disabled = true;
+                }
+            }
+        })();
+    </script>
+</body>
 </html>
