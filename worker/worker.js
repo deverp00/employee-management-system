@@ -1147,16 +1147,714 @@ function isoDateUTC() {
     return `${y}-${m}-${day}`;
 }
 
+/* ----------------------------------------------------------------------------
+ * Common authorization helper
+ *
+ * Every protected endpoint runs the same sequence: extract the Bearer token,
+ * verify it, resolve the authoritative context. This helper centralizes that
+ * sequence so a missing check is impossible.
+ * ------------------------------------------------------------------------- */
+
+async function requireAuth(request, env, corsHeaders, requestId) {
+    const auth = await authenticateRequest(request, env);
+    if (!auth.ok) {
+        return { ok: false, response: errorResponse('unauthorized', 401, corsHeaders, requestId) };
+    }
+    const resolved = await resolveAuthContext(env, auth.decoded);
+    if (!resolved.ok) {
+        if (resolved.code === 'server_error') {
+            return { ok: false, response: errorResponse('server_error', 500, corsHeaders, requestId) };
+        }
+        return { ok: false, response: errorResponse('forbidden', 403, corsHeaders, requestId) };
+    }
+    return { ok: true, context: resolved.context };
+}
+
+function isAdmin(role) {
+    return role === 'super_admin' || role === 'hr_admin';
+}
+
+/* ----------------------------------------------------------------------------
+ * Employees — validation and shaping
+ * ------------------------------------------------------------------------- */
+
+const EMPLOYMENT_TYPES = ['full_time', 'part_time', 'contract', 'intern'];
+const EMPLOYEE_STATUSES = ['active', 'inactive', 'terminated'];
+const GENDERS = ['male', 'female', 'other'];
+
+const MAX_NAME_LEN = 80;
+const MAX_CODE_LEN = 40;
+const MAX_TEXT_LEN = 250;
+
+function isString(v) { return typeof v === 'string'; }
+
+function normalizeOptionalString(v, maxLen) {
+    if (v === null || v === undefined) return '';
+    if (typeof v !== 'string') return '';
+    const s = v.trim();
+    if (s.length === 0) return '';
+    return s.slice(0, maxLen);
+}
+
+function isValidEmailFormat(v) {
+    return typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
+function isValidISODate(v) {
+    if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+    const d = new Date(v + 'T00:00:00Z');
+    return !isNaN(d.getTime());
+}
+
+/**
+ * Validates an employee payload. Returns:
+ *   { ok: true, cleaned: <record-shaped object> }
+ *   { ok: false, errors: { fieldName: 'message', ... } }
+ *
+ * When { partial: true } is set, missing fields are allowed. When false,
+ * required fields must be present.
+ */
+function validateEmployeePayload(body, options) {
+    const partial = !!(options && options.partial);
+    const errors = {};
+    const cleaned = {};
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return { ok: false, errors: { _root: 'Request body must be a JSON object.' } };
+    }
+
+    function requireField(name) {
+        if (!partial && (body[name] === undefined || body[name] === null || body[name] === '')) {
+            errors[name] = 'This field is required.';
+            return false;
+        }
+        return true;
+    }
+
+    // First name
+    if (requireField('firstName') || body.firstName !== undefined) {
+        const v = normalizeOptionalString(body.firstName, MAX_NAME_LEN);
+        if (!v) errors.firstName = 'First name is required.';
+        else cleaned.firstName = v;
+    }
+
+    // Last name
+    if (body.lastName !== undefined) {
+        cleaned.lastName = normalizeOptionalString(body.lastName, MAX_NAME_LEN);
+    } else if (!partial) {
+        cleaned.lastName = '';
+    }
+
+    // Email
+    if (requireField('email') || body.email !== undefined) {
+        const v = normalizeOptionalString(body.email, MAX_TEXT_LEN);
+        if (!v) errors.email = 'Email is required.';
+        else if (!isValidEmailFormat(v)) errors.email = 'Enter a valid email address.';
+        else cleaned.email = v.toLowerCase();
+    }
+
+    // Phone
+    if (body.phone !== undefined) {
+        cleaned.phone = normalizeOptionalString(body.phone, 30);
+    } else if (!partial) {
+        cleaned.phone = '';
+    }
+
+    // Date of birth
+    if (body.dateOfBirth !== undefined) {
+        const v = normalizeOptionalString(body.dateOfBirth, 10);
+        if (v && !isValidISODate(v)) errors.dateOfBirth = 'Date of birth must be YYYY-MM-DD.';
+        else cleaned.dateOfBirth = v;
+    } else if (!partial) {
+        cleaned.dateOfBirth = '';
+    }
+
+    // Gender
+    if (body.gender !== undefined) {
+        const v = normalizeOptionalString(body.gender, 20).toLowerCase();
+        if (v && !GENDERS.includes(v)) errors.gender = 'Select a valid gender.';
+        else cleaned.gender = v;
+    } else if (!partial) {
+        cleaned.gender = '';
+    }
+
+    // Address
+    if (body.address !== undefined) {
+        cleaned.address = normalizeOptionalString(body.address, MAX_TEXT_LEN);
+    } else if (!partial) {
+        cleaned.address = '';
+    }
+
+    // Emergency contact
+    if (body.emergencyContact !== undefined) {
+        cleaned.emergencyContact = normalizeOptionalString(body.emergencyContact, MAX_TEXT_LEN);
+    } else if (!partial) {
+        cleaned.emergencyContact = '';
+    }
+
+    // Department and designation — treated as opaque IDs. The Administration
+    // module is responsible for maintaining the reference data. The Worker
+    // does not validate that a referenced department or designation exists,
+    // because that would add a database read per write and the reference
+    // data is small. A dangling reference is a data quality issue that the
+    // Administration module can surface; it is not a security issue.
+    if (body.departmentId !== undefined) {
+        cleaned.departmentId = normalizeOptionalString(body.departmentId, MAX_CODE_LEN) || null;
+    } else if (!partial) {
+        cleaned.departmentId = null;
+    }
+    if (body.designationId !== undefined) {
+        cleaned.designationId = normalizeOptionalString(body.designationId, MAX_CODE_LEN) || null;
+    } else if (!partial) {
+        cleaned.designationId = null;
+    }
+
+    // Join date
+    if (requireField('joinDate') || body.joinDate !== undefined) {
+        const v = normalizeOptionalString(body.joinDate, 10);
+        if (!v) errors.joinDate = 'Join date is required.';
+        else if (!isValidISODate(v)) errors.joinDate = 'Join date must be YYYY-MM-DD.';
+        else cleaned.joinDate = v;
+    }
+
+    // Employment type
+    if (requireField('employmentType') || body.employmentType !== undefined) {
+        const v = normalizeOptionalString(body.employmentType, 20).toLowerCase();
+        if (!v) errors.employmentType = 'Employment type is required.';
+        else if (!EMPLOYMENT_TYPES.includes(v)) errors.employmentType = 'Select a valid employment type.';
+        else cleaned.employmentType = v;
+    }
+
+    // Status — defaults to active on create; updatable via dedicated endpoint
+    if (body.status !== undefined) {
+        const v = normalizeOptionalString(body.status, 20).toLowerCase();
+        if (!EMPLOYEE_STATUSES.includes(v)) errors.status = 'Select a valid status.';
+        else cleaned.status = v;
+    } else if (!partial) {
+        cleaned.status = 'active';
+    }
+
+    // Employee code — optional. If not provided on create, it is auto-generated.
+    if (body.employeeCode !== undefined) {
+        const v = normalizeOptionalString(body.employeeCode, MAX_CODE_LEN).toUpperCase();
+        if (v && !/^[A-Z0-9-]+$/.test(v)) {
+            errors.employeeCode = 'Employee code may contain letters, numbers, and hyphens only.';
+        } else {
+            cleaned.employeeCode = v;
+        }
+    }
+
+    // uid — optional link to a Firebase Auth account
+    if (body.uid !== undefined) {
+        const v = normalizeOptionalString(body.uid, 128);
+        cleaned.uid = v || null;
+    } else if (!partial) {
+        cleaned.uid = null;
+    }
+
+    // Bank details — nested object
+    if (body.bank !== undefined) {
+        const b = body.bank;
+        if (b === null) {
+            cleaned.bank = { bankName: '', accountNumber: '', ifsc: '' };
+        } else if (typeof b !== 'object' || Array.isArray(b)) {
+            errors.bank = 'Bank details must be an object.';
+        } else {
+            cleaned.bank = {
+                bankName:      normalizeOptionalString(b.bankName, 100),
+                accountNumber: normalizeOptionalString(b.accountNumber, 40),
+                ifsc:          normalizeOptionalString(b.ifsc, 20).toUpperCase(),
+            };
+        }
+    } else if (!partial) {
+        cleaned.bank = { bankName: '', accountNumber: '', ifsc: '' };
+    }
+
+    if (Object.keys(errors).length > 0) {
+        return { ok: false, errors };
+    }
+    return { ok: true, cleaned };
+}
+
+function shapeEmployeeListItem(rec) {
+    return {
+        employeeId:     String(rec.employeeId || ''),
+        employeeCode:   String(rec.employeeCode || ''),
+        firstName:      String(rec.firstName || ''),
+        lastName:       String(rec.lastName || ''),
+        email:          String(rec.email || ''),
+        departmentId:   rec.departmentId ? String(rec.departmentId) : null,
+        designationId:  rec.designationId ? String(rec.designationId) : null,
+        status:         String(rec.status || ''),
+        joinDate:       String(rec.joinDate || ''),
+        employmentType: String(rec.employmentType || ''),
+    };
+}
+
+/**
+ * Full employee shape. Bank details are included only when the caller is
+ * authorized to see them: admins, or the employee viewing their own record.
+ */
+function shapeEmployeeFull(rec, options) {
+    const includeBank = !!(options && options.includeBank);
+    const out = Object.assign(shapeEmployeeListItem(rec), {
+        uid:              rec.uid ? String(rec.uid) : null,
+        phone:            String(rec.phone || ''),
+        dateOfBirth:      String(rec.dateOfBirth || ''),
+        gender:           String(rec.gender || ''),
+        address:          String(rec.address || ''),
+        emergencyContact: String(rec.emergencyContact || ''),
+        createdAt:        String(rec.createdAt || ''),
+        updatedAt:        String(rec.updatedAt || ''),
+        createdBy:        String(rec.createdBy || ''),
+        updatedBy:        String(rec.updatedBy || ''),
+    });
+    if (includeBank) {
+        const b = rec.bank && typeof rec.bank === 'object' ? rec.bank : {};
+        out.bank = {
+            bankName:      String(b.bankName || ''),
+            accountNumber: String(b.accountNumber || ''),
+            ifsc:          String(b.ifsc || ''),
+        };
+    }
+    return out;
+}
+
+function generateEmployeeCode(existingCodes) {
+    // Sequential codes in the form EMP0001, EMP0002, ... Uniqueness is
+    // enforced by taking the current maximum and adding one. A concurrent
+    // create could theoretically produce the same code in a very short
+    // window; HR administration operations are rare enough that this is
+    // acceptable. A future version can move the counter into a transaction.
+    let maxNum = 0;
+    for (const code of existingCodes) {
+        const m = /^EMP(\d+)$/.exec(String(code || ''));
+        if (m) {
+            const n = parseInt(m[1], 10);
+            if (Number.isFinite(n) && n > maxNum) maxNum = n;
+        }
+    }
+    return 'EMP' + String(maxNum + 1).padStart(4, '0');
+}
+
+/* ----------------------------------------------------------------------------
+ * Employees — handlers
+ * ------------------------------------------------------------------------- */
+
+async function handleEmployeesList(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    let all;
+    try {
+        all = await rtdbGet(env, accessToken, '/employees');
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    const raw = (all && typeof all === 'object' && !Array.isArray(all)) ? all : {};
+
+    const url = new URL(request.url);
+    const search        = (url.searchParams.get('search') || '').trim().toLowerCase();
+    const departmentId  = (url.searchParams.get('departmentId') || '').trim();
+    const designationId = (url.searchParams.get('designationId') || '').trim();
+    const status        = (url.searchParams.get('status') || '').trim().toLowerCase();
+
+    let items = Object.values(raw).filter((r) => r && typeof r === 'object');
+
+    if (search) {
+        items = items.filter((r) => {
+            const hay = [
+                r.firstName, r.lastName, r.email, r.employeeCode,
+            ].filter(Boolean).join(' ').toLowerCase();
+            return hay.indexOf(search) !== -1;
+        });
+    }
+    if (departmentId)  items = items.filter((r) => String(r.departmentId || '') === departmentId);
+    if (designationId) items = items.filter((r) => String(r.designationId || '') === designationId);
+    if (status)        items = items.filter((r) => String(r.status || '').toLowerCase() === status);
+
+    items.sort((a, b) => {
+        const ac = String(a.employeeCode || '').toUpperCase();
+        const bc = String(b.employeeCode || '').toUpperCase();
+        if (ac && bc) return ac.localeCompare(bc);
+        const an = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+        const bn = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+        return an.localeCompare(bn);
+    });
+
+    const page     = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(url.searchParams.get('pageSize') || '25', 10) || 25));
+    const total    = items.length;
+    const start    = (page - 1) * pageSize;
+    const slice    = items.slice(start, start + pageSize);
+
+    return jsonResponse({
+        items:    slice.map(shapeEmployeeListItem),
+        total:    total,
+        page:     page,
+        pageSize: pageSize,
+    }, 200, corsHeaders, requestId);
+}
+
+async function handleEmployeeGet(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    let targetId = params && params.employeeId ? params.employeeId : '';
+    if (targetId === 'me') {
+        targetId = ctx.employeeId || '';
+    }
+
+    if (!targetId) {
+        return errorResponse('not_found', 404, corsHeaders, requestId);
+    }
+
+    // Ownership check: an employee may only read their own record.
+    const isOwn = ctx.role === 'employee' && ctx.employeeId === targetId;
+    if (ctx.role === 'employee' && !isOwn) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    let record;
+    try {
+        record = await rtdbGet(env, accessToken, `/employees/${encodeURIComponent(targetId)}`);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    if (!record || typeof record !== 'object') {
+        return errorResponse('not_found', 404, corsHeaders, requestId);
+    }
+
+    const includeBank = isAdmin(ctx.role) || isOwn;
+    return jsonResponse(shapeEmployeeFull(record, { includeBank }), 200, corsHeaders, requestId);
+}
+
+async function handleEmployeeCreate(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const body = await readJsonBody(request);
+    if (!body.ok) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    const validated = validateEmployeePayload(body.data, { partial: false });
+    if (!validated.ok) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: validated.errors,
+        });
+    }
+    const clean = validated.cleaned;
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    // Duplicate checks
+    let all;
+    try {
+        all = await rtdbGet(env, accessToken, '/employees');
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+    const raw = (all && typeof all === 'object' && !Array.isArray(all)) ? all : {};
+
+    const existingCodes = new Set();
+    const existingEmails = new Set();
+    const existingUids = new Set();
+    for (const r of Object.values(raw)) {
+        if (!r || typeof r !== 'object') continue;
+        if (r.employeeCode) existingCodes.add(String(r.employeeCode).toUpperCase());
+        if (r.email) existingEmails.add(String(r.email).toLowerCase());
+        if (r.uid) existingUids.add(String(r.uid));
+    }
+
+    if (clean.employeeCode && existingCodes.has(clean.employeeCode)) {
+        return errorResponse('conflict', 409, corsHeaders, requestId, {
+            fields: { employeeCode: 'This employee code is already in use.' },
+        });
+    }
+    if (existingEmails.has(clean.email)) {
+        return errorResponse('conflict', 409, corsHeaders, requestId, {
+            fields: { email: 'An employee with this email already exists.' },
+        });
+    }
+    if (clean.uid && existingUids.has(clean.uid)) {
+        return errorResponse('conflict', 409, corsHeaders, requestId, {
+            fields: { uid: 'This Firebase account is already linked to another employee.' },
+        });
+    }
+
+    const employeeCode = clean.employeeCode || generateEmployeeCode(existingCodes);
+
+    const employeeId = (crypto && typeof crypto.randomUUID === 'function')
+        ? crypto.randomUUID()
+        : `emp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    const now = new Date().toISOString();
+    const record = {
+        employeeId,
+        employeeCode,
+        orgId:          ctx.orgId || null,
+        uid:            clean.uid || null,
+        firstName:      clean.firstName,
+        lastName:       clean.lastName,
+        email:          clean.email,
+        phone:          clean.phone || '',
+        dateOfBirth:    clean.dateOfBirth || '',
+        gender:         clean.gender || '',
+        address:        clean.address || '',
+        emergencyContact: clean.emergencyContact || '',
+        departmentId:   clean.departmentId || null,
+        designationId:  clean.designationId || null,
+        joinDate:       clean.joinDate,
+        employmentType: clean.employmentType,
+        status:         clean.status || 'active',
+        bank:           clean.bank || { bankName: '', accountNumber: '', ifsc: '' },
+        createdAt:      now,
+        updatedAt:      now,
+        createdBy:      ctx.uid,
+        updatedBy:      ctx.uid,
+    };
+
+    try {
+        await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}`, record);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    return jsonResponse(shapeEmployeeFull(record, { includeBank: true }), 201, corsHeaders, requestId);
+}
+
+async function handleEmployeeUpdate(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const targetId = params && params.employeeId ? params.employeeId : '';
+    if (!targetId) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    const body = await readJsonBody(request);
+    if (!body.ok) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    const validated = validateEmployeePayload(body.data, { partial: true });
+    if (!validated.ok) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: validated.errors,
+        });
+    }
+    const clean = validated.cleaned;
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    let current;
+    try {
+        current = await rtdbGet(env, accessToken, `/employees/${encodeURIComponent(targetId)}`);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    if (!current || typeof current !== 'object') {
+        return errorResponse('not_found', 404, corsHeaders, requestId);
+    }
+
+    // Duplicate checks against OTHER records
+    let all;
+    try {
+        all = await rtdbGet(env, accessToken, '/employees');
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+    const raw = (all && typeof all === 'object' && !Array.isArray(all)) ? all : {};
+
+    if (clean.employeeCode) {
+        const codeUpper = clean.employeeCode.toUpperCase();
+        for (const [id, r] of Object.entries(raw)) {
+            if (id === targetId) continue;
+            if (r && String(r.employeeCode || '').toUpperCase() === codeUpper) {
+                return errorResponse('conflict', 409, corsHeaders, requestId, {
+                    fields: { employeeCode: 'This employee code is already in use.' },
+                });
+            }
+        }
+    }
+    if (clean.email) {
+        for (const [id, r] of Object.entries(raw)) {
+            if (id === targetId) continue;
+            if (r && String(r.email || '').toLowerCase() === clean.email.toLowerCase()) {
+                return errorResponse('conflict', 409, corsHeaders, requestId, {
+                    fields: { email: 'Another employee already uses this email.' },
+                });
+            }
+        }
+    }
+    if (clean.uid) {
+        for (const [id, r] of Object.entries(raw)) {
+            if (id === targetId) continue;
+            if (r && String(r.uid || '') === clean.uid) {
+                return errorResponse('conflict', 409, corsHeaders, requestId, {
+                    fields: { uid: 'This Firebase account is already linked to another employee.' },
+                });
+            }
+        }
+    }
+
+    // Merge — fields not present in the request are unchanged.
+    const updated = Object.assign({}, current, clean, {
+        employeeId: targetId,
+        updatedAt:  new Date().toISOString(),
+        updatedBy:  ctx.uid,
+    });
+
+    try {
+        await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(targetId)}`, updated);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    return jsonResponse(shapeEmployeeFull(updated, { includeBank: true }), 200, corsHeaders, requestId);
+}
+
+async function handleEmployeeStatusUpdate(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const targetId = params && params.employeeId ? params.employeeId : '';
+    if (!targetId) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    const body = await readJsonBody(request);
+    if (!body.ok || !body.data || typeof body.data !== 'object') {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    const status = String(body.data.status || '').trim().toLowerCase();
+    if (!EMPLOYEE_STATUSES.includes(status)) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: { status: 'Select a valid status: active, inactive, or terminated.' },
+        });
+    }
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    let current;
+    try {
+        current = await rtdbGet(env, accessToken, `/employees/${encodeURIComponent(targetId)}`);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    if (!current || typeof current !== 'object') {
+        return errorResponse('not_found', 404, corsHeaders, requestId);
+    }
+
+    const updated = Object.assign({}, current, {
+        status,
+        updatedAt: new Date().toISOString(),
+        updatedBy: ctx.uid,
+    });
+
+    try {
+        await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(targetId)}`, updated);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    return jsonResponse(shapeEmployeeFull(updated, { includeBank: true }), 200, corsHeaders, requestId);
+}
+
 /* ============================================================================
  * 13. Router
  * ========================================================================= */
 
 function matchRoute(method, pathname) {
+    // --- Exact routes ----------------------------------------------------
     if (method === 'GET'  && pathname === '/health')            return { name: 'health' };
     if (method === 'GET'  && pathname === '/public/config')     return { name: 'publicConfig' };
     if (method === 'GET'  && pathname === '/auth/context')      return { name: 'authContext', requiresAuth: true };
     if (method === 'POST' && pathname === '/admin/bootstrap')   return { name: 'adminBootstrap', requiresAuth: true };
     if (method === 'GET'  && pathname === '/dashboard/summary') return { name: 'dashboardSummary', requiresAuth: true };
+
+    // --- Parameterized routes -------------------------------------------
+    // Split the path into non-empty segments and match against simple
+    // patterns. Each segment is decoded so IDs containing URL-escaped
+    // characters match correctly. Firebase UIDs are URL-safe, but the
+    // decoding is applied defensively.
+    const parts = pathname.split('/').filter((p) => p.length > 0);
+
+    // /employees
+    if (parts.length === 1 && parts[0] === 'employees') {
+        if (method === 'GET')  return { name: 'employeesList',   requiresAuth: true };
+        if (method === 'POST') return { name: 'employeeCreate',  requiresAuth: true };
+    }
+
+    // /employees/:id
+    if (parts.length === 2 && parts[0] === 'employees') {
+        const employeeId = decodeURIComponent(parts[1]);
+        if (method === 'GET')   return { name: 'employeeGet',    requiresAuth: true, params: { employeeId } };
+        if (method === 'PATCH') return { name: 'employeeUpdate', requiresAuth: true, params: { employeeId } };
+    }
+
+    // /employees/:id/status
+    if (parts.length === 3 && parts[0] === 'employees' && parts[2] === 'status') {
+        const employeeId = decodeURIComponent(parts[1]);
+        if (method === 'PATCH') return { name: 'employeeStatusUpdate', requiresAuth: true, params: { employeeId } };
+    }
+
     return null;
 }
 
@@ -1218,6 +1916,16 @@ export default {
                     return await handleAdminBootstrap(request, env, requestId, corsHeaders);
                 case 'dashboardSummary':
                     return await handleDashboardSummary(request, env, requestId, corsHeaders);
+                case 'employeesList':
+                    return await handleEmployeesList(request, env, requestId, corsHeaders);
+                case 'employeeGet':
+                    return await handleEmployeeGet(request, env, requestId, corsHeaders, route.params);
+                case 'employeeCreate':
+                    return await handleEmployeeCreate(request, env, requestId, corsHeaders);
+                case 'employeeUpdate':
+                    return await handleEmployeeUpdate(request, env, requestId, corsHeaders, route.params);
+                case 'employeeStatusUpdate':
+                    return await handleEmployeeStatusUpdate(request, env, requestId, corsHeaders, route.params);
                 default:
                     return errorResponse('not_found', 404, corsHeaders, requestId);
             }
