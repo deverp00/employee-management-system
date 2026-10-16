@@ -3113,6 +3113,314 @@ function countWorkingDays(fromISO, toISO) {
     return count;
 }
 
+/* ----------------------------------------------------------------------------
+ * Payroll settings
+ *
+ * The organization's payroll configuration lives in a single document:
+ *   settings/{orgKey}/payroll
+ *
+ * The settings document has two parts:
+ *   general    : currency, cycle, cut-off and pay-day, working-day basis
+ *   components : named earning and deduction lines that participate in
+ *                payroll calculations. Each component has a stable id,
+ *                a calculation type, and a value.
+ *
+ * Defaults are returned when no settings have been saved. Saving replaces
+ * the entire document. There is no partial update at this endpoint, which
+ * keeps validation simple and prevents stale fields from lingering.
+ *
+ * Authorization:
+ *   GET  : super_admin and hr_admin
+ *   PUT  : super_admin only
+ * ------------------------------------------------------------------------- */
+
+const PAYROLL_CYCLES = ['monthly'];
+const WORKING_DAYS_BASIS = ['fixed_30', 'attendance', 'calendar'];
+const COMPONENT_TYPES = ['earning', 'deduction'];
+const COMPONENT_CATEGORIES = ['base', 'allowance', 'statutory', 'other'];
+const COMPONENT_CALC_TYPES = ['fixed', 'percent_of_base', 'percent_of_gross'];
+
+function resolveOrgKey(ctx) {
+    return (ctx && typeof ctx.orgId === 'string' && ctx.orgId.length > 0) ? ctx.orgId : 'default';
+}
+
+function defaultPayrollSettings() {
+    return {
+        general: {
+            currency: 'INR',
+            cycle: 'monthly',
+            payDay: 1,
+            cutOffDay: 25,
+            workingDaysBasis: 'calendar',
+        },
+        components: [
+            {
+                id: 'basic',
+                name: 'Basic Salary',
+                type: 'earning',
+                category: 'base',
+                calcType: 'fixed',
+                calcValue: 0,
+                taxable: true,
+                enabled: true,
+                displayOrder: 1,
+            },
+        ],
+    };
+}
+
+function componentsArrayFromStored(stored) {
+    // RTDB stores arrays as objects with numeric keys. Stored components
+    // are also stored keyed by component id. Return an array sorted by
+    // displayOrder for stable presentation.
+    if (!stored || typeof stored !== 'object') return [];
+    const items = Array.isArray(stored) ? stored.slice() : Object.values(stored);
+    return items
+        .filter((c) => c && typeof c === 'object')
+        .sort((a, b) => (Number(a.displayOrder) || 0) - (Number(b.displayOrder) || 0));
+}
+
+function componentsObjectFromArray(arr) {
+    const out = {};
+    for (const c of arr) {
+        if (!c || typeof c !== 'object') continue;
+        const id = String(c.id || '');
+        if (!id) continue;
+        out[id] = c;
+    }
+    return out;
+}
+
+function validatePayrollSettings(body) {
+    const errors = {};
+    const cleaned = { general: {}, components: [] };
+
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return { ok: false, errors: { _root: 'Request body must be a JSON object.' } };
+    }
+
+    // --- General ---------------------------------------------------------
+    const general = (body.general && typeof body.general === 'object' && !Array.isArray(body.general))
+        ? body.general
+        : {};
+
+    const currency = String(general.currency || '').trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(currency)) {
+        errors['general.currency'] = 'Currency must be a three-letter code.';
+    } else {
+        cleaned.general.currency = currency;
+    }
+
+    const cycle = String(general.cycle || '').trim().toLowerCase();
+    if (!PAYROLL_CYCLES.includes(cycle)) {
+        errors['general.cycle'] = 'Select a valid payroll cycle.';
+    } else {
+        cleaned.general.cycle = cycle;
+    }
+
+    const payDay = Number(general.payDay);
+    if (!Number.isInteger(payDay) || payDay < 1 || payDay > 28) {
+        errors['general.payDay'] = 'Pay day must be a number between 1 and 28.';
+    } else {
+        cleaned.general.payDay = payDay;
+    }
+
+    const cutOffDay = Number(general.cutOffDay);
+    if (!Number.isInteger(cutOffDay) || cutOffDay < 1 || cutOffDay > 28) {
+        errors['general.cutOffDay'] = 'Cut-off day must be a number between 1 and 28.';
+    } else {
+        cleaned.general.cutOffDay = cutOffDay;
+    }
+
+    const basis = String(general.workingDaysBasis || '').trim().toLowerCase();
+    if (!WORKING_DAYS_BASIS.includes(basis)) {
+        errors['general.workingDaysBasis'] = 'Select a valid working-day basis.';
+    } else {
+        cleaned.general.workingDaysBasis = basis;
+    }
+
+    // --- Components ------------------------------------------------------
+    const rawComponents = body.components;
+    let componentList = [];
+    if (Array.isArray(rawComponents)) {
+        componentList = rawComponents;
+    } else if (rawComponents && typeof rawComponents === 'object') {
+        componentList = Object.values(rawComponents);
+    } else {
+        errors.components = 'Components must be provided as an array.';
+    }
+
+    const seenIds = new Set();
+    let baseCount = 0;
+
+    for (let i = 0; i < componentList.length; i++) {
+        const raw = componentList[i];
+        const prefix = `components[${i}]`;
+        if (!raw || typeof raw !== 'object') {
+            errors[`${prefix}`] = 'Component must be an object.';
+            continue;
+        }
+
+        const id = String(raw.id || '').trim().toLowerCase();
+        if (!/^[a-z0-9][a-z0-9-]{0,39}$/.test(id)) {
+            errors[`${prefix}.id`] = 'Component id must be lowercase letters, numbers, or hyphens.';
+            continue;
+        }
+        if (seenIds.has(id)) {
+            errors[`${prefix}.id`] = 'Component id must be unique.';
+            continue;
+        }
+        seenIds.add(id);
+
+        const name = normalizeOptionalString(raw.name, 80);
+        if (!name) {
+            errors[`${prefix}.name`] = 'Component name is required.';
+        }
+
+        const type = String(raw.type || '').trim().toLowerCase();
+        if (!COMPONENT_TYPES.includes(type)) {
+            errors[`${prefix}.type`] = 'Component type must be earning or deduction.';
+        }
+
+        const category = String(raw.category || '').trim().toLowerCase();
+        if (!COMPONENT_CATEGORIES.includes(category)) {
+            errors[`${prefix}.category`] = 'Select a valid category.';
+        } else if (category === 'base') {
+            baseCount += 1;
+            if (baseCount > 1) {
+                errors[`${prefix}.category`] = 'Only one base component is allowed.';
+            }
+        }
+
+        const calcType = String(raw.calcType || '').trim().toLowerCase();
+        if (!COMPONENT_CALC_TYPES.includes(calcType)) {
+            errors[`${prefix}.calcType`] = 'Select a valid calculation type.';
+        }
+
+        const calcValue = Number(raw.calcValue);
+        if (!Number.isFinite(calcValue) || calcValue < 0) {
+            errors[`${prefix}.calcValue`] = 'Value must be a non-negative number.';
+        } else if (calcType.startsWith('percent') && calcValue > 100) {
+            errors[`${prefix}.calcValue`] = 'Percentage cannot exceed 100.';
+        }
+
+        const taxable = Boolean(raw.taxable);
+        const enabled = raw.enabled !== false;
+        const displayOrder = Number.isInteger(Number(raw.displayOrder))
+            ? Number(raw.displayOrder)
+            : i;
+
+        cleaned.components.push({
+            id,
+            name: name || id,
+            type: COMPONENT_TYPES.includes(type) ? type : 'earning',
+            category: COMPONENT_CATEGORIES.includes(category) ? category : 'other',
+            calcType: COMPONENT_CALC_TYPES.includes(calcType) ? calcType : 'fixed',
+            calcValue: Number.isFinite(calcValue) && calcValue >= 0 ? calcValue : 0,
+            taxable,
+            enabled,
+            displayOrder,
+        });
+    }
+
+    if (cleaned.components.length === 0) {
+        errors.components = 'At least one component is required.';
+    }
+
+    if (Object.keys(errors).length > 0) return { ok: false, errors };
+    return { ok: true, cleaned };
+}
+
+async function handlePayrollSettingsGet(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    let accessToken;
+    try { accessToken = await getServiceAccountAccessToken(env); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    const orgKey = resolveOrgKey(ctx);
+    const path = `/settings/${encodeURIComponent(orgKey)}/payroll`;
+
+    let stored;
+    try { stored = await rtdbGet(env, accessToken, path); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    if (!stored || typeof stored !== 'object' || !stored.general) {
+        return jsonResponse({
+            settings: defaultPayrollSettings(),
+            isDefault: true,
+        }, 200, corsHeaders, requestId);
+    }
+
+    return jsonResponse({
+        settings: {
+            general: {
+                currency:          String(stored.general.currency || 'INR'),
+                cycle:             String(stored.general.cycle || 'monthly'),
+                payDay:            Number(stored.general.payDay) || 1,
+                cutOffDay:         Number(stored.general.cutOffDay) || 25,
+                workingDaysBasis:  String(stored.general.workingDaysBasis || 'calendar'),
+            },
+            components: componentsArrayFromStored(stored.components),
+        },
+        isDefault: false,
+    }, 200, corsHeaders, requestId);
+}
+
+async function handlePayrollSettingsPut(request, env, requestId, corsHeaders) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (ctx.role !== 'super_admin') {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const body = await readJsonBody(request);
+    if (!body.ok) return errorResponse('bad_request', 400, corsHeaders, requestId);
+
+    const validated = validatePayrollSettings(body.data);
+    if (!validated.ok) {
+        return errorResponse('validation_failed', 422, corsHeaders, requestId, {
+            fields: validated.errors,
+        });
+    }
+
+    const cleaned = validated.cleaned;
+    const orgKey = resolveOrgKey(ctx);
+    const path = `/settings/${encodeURIComponent(orgKey)}/payroll`;
+
+    const now = new Date().toISOString();
+    const doc = {
+        general: cleaned.general,
+        components: componentsObjectFromArray(cleaned.components),
+        updatedAt: now,
+        updatedBy: ctx.uid,
+    };
+
+    let accessToken;
+    try { accessToken = await getServiceAccountAccessToken(env); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    try { await rtdbSet(env, accessToken, path, doc); }
+    catch (_e) { return errorResponse('server_error', 500, corsHeaders, requestId); }
+
+    return jsonResponse({
+        settings: {
+            general: cleaned.general,
+            components: cleaned.components,
+        },
+        isDefault: false,
+        updatedAt: now,
+    }, 200, corsHeaders, requestId);
+}
+
 /* ============================================================================
  * 13. Router
  * ========================================================================= */
@@ -3203,6 +3511,12 @@ function matchRoute(method, pathname) {
         const year = decodeURIComponent(parts[3]);
         if (method === 'GET')   return { name: 'leaveBalancesGet', requiresAuth: true, params: { employeeId, year } };
         if (method === 'PATCH') return { name: 'leaveBalancesSet', requiresAuth: true, params: { employeeId, year } };
+    }
+
+    // /settings/payroll
+    if (parts.length === 2 && parts[0] === 'settings' && parts[1] === 'payroll') {
+        if (method === 'GET') return { name: 'payrollSettingsGet', requiresAuth: true };
+        if (method === 'PUT') return { name: 'payrollSettingsPut', requiresAuth: true };
     }
 
     return null;
@@ -3300,6 +3614,10 @@ export default {
                     return await handleLeaveBalancesGet(request, env, requestId, corsHeaders, route.params);
                 case 'leaveBalancesSet':
                     return await handleLeaveBalancesSet(request, env, requestId, corsHeaders, route.params);
+                case 'payrollSettingsGet':
+                    return await handlePayrollSettingsGet(request, env, requestId, corsHeaders);
+                case 'payrollSettingsPut':
+                    return await handlePayrollSettingsPut(request, env, requestId, corsHeaders);
                 default:
                     return errorResponse('not_found', 404, corsHeaders, requestId);
             }
