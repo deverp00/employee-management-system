@@ -198,6 +198,20 @@ html, body {
     overflow-x: hidden;
     max-width: 100%;
 }
+/*
+ * Ensure the HTML `hidden` attribute always hides the element, regardless
+ * of any display value applied by a class. Without this rule, an element
+ * such as .login-shell (display: flex) remains visible even when `hidden`
+ * is present, because a class-based display declaration overrides the
+ * user-agent default for [hidden].
+ *
+ * !important is justified here: the whole purpose of this rule is to
+ * guarantee that `hidden` works unconditionally, and this is the standard
+ * pattern used across production codebases for exactly this reason.
+ */
+[hidden] {
+    display: none !important;
+}
 
 /*
  * Ensure the HTML `hidden` attribute always hides the element, regardless
