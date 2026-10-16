@@ -339,13 +339,34 @@ async function getServiceAccountAccessToken(env) {
         return cachedAccessToken;
     }
 
-    const email = env.FIREBASE_SERVICE_ACCOUNT_EMAIL;
-    const privateKeyPem = env.FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY;
+    // The service account is stored as a single Cloudflare Secret named
+    // FIREBASE_SERVICE_ACCOUNT_JSON, containing the full JSON that Firebase
+    // issues when a new private key is generated. We parse it here to
+    // extract the client email and private key. This avoids duplicating the
+    // same credential across two secrets and keeps the deployment simple.
+    const rawJson = env.FIREBASE_SERVICE_ACCOUNT_JSON;
+    if (typeof rawJson !== 'string' || rawJson.length === 0) {
+        throw new Error('service_account_json_missing');
+    }
 
-    if (typeof email !== 'string' || email.length === 0) {
+    let serviceAccount;
+    try {
+        serviceAccount = JSON.parse(rawJson);
+    } catch (_e) {
+        throw new Error('service_account_json_invalid');
+    }
+
+    const email = serviceAccount && typeof serviceAccount.client_email === 'string'
+        ? serviceAccount.client_email
+        : '';
+    const privateKeyPem = serviceAccount && typeof serviceAccount.private_key === 'string'
+        ? serviceAccount.private_key
+        : '';
+
+    if (!email) {
         throw new Error('service_account_email_missing');
     }
-    if (typeof privateKeyPem !== 'string' || privateKeyPem.length === 0) {
+    if (!privateKeyPem) {
         throw new Error('service_account_key_missing');
     }
 
