@@ -68,6 +68,7 @@ const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SERVICE_ACCOUNT_SCOPES = [
     'https://www.googleapis.com/auth/firebase.database',
     'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/identitytoolkit',
 ].join(' ');
 
 /** Recognized application roles. The display name for each is decided in the frontend. */
@@ -475,6 +476,145 @@ async function signJwt(header, payload, privateKey) {
     return `${signingInput}.${signatureB64}`;
 }
 
+/* ----------------------------------------------------------------------------
+ * Firebase Authentication Admin API
+ *
+ * Create users without a password. The user sets their own password via a
+ * Firebase password reset link sent to their email. The admin never knows
+ * or stores any password.
+ *
+ * All endpoints use the service account OAuth2 token. The service account
+ * must have the Firebase Authentication Admin role.
+ * ------------------------------------------------------------------------- */
+
+const IDENTITY_TOOLKIT_BASE = 'https://identitytoolkit.googleapis.com/v1';
+
+async function createFirebaseAuthUser(env, email, displayName) {
+    const projectId = env.FIREBASE_PROJECT_ID;
+    if (!projectId) throw new Error('project_id_missing');
+
+    const accessToken = await getServiceAccountAccessToken(env);
+
+    const url = `${IDENTITY_TOOLKIT_BASE}/projects/${encodeURIComponent(projectId)}/accounts`;
+    const body = {
+        email: email,
+        displayName: displayName || '',
+        emailVerified: false,
+        disabled: false,
+    };
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+        const text = await res.text();
+        let errCode = 'unknown';
+        try {
+            const parsed = JSON.parse(text);
+            errCode = (parsed && parsed.error && parsed.error.message) || 'unknown';
+        } catch (_e) { /* noop */ }
+
+        if (errCode === 'EMAIL_EXISTS') throw new Error('email_already_exists');
+        throw new Error('firebase_user_create_failed');
+    }
+
+    const data = await res.json();
+    if (!data || typeof data.localId !== 'string' || data.localId.length === 0) {
+        throw new Error('firebase_user_create_no_uid');
+    }
+
+    return {
+        uid: data.localId,
+        email: data.email || email,
+    };
+}
+
+async function sendPasswordResetEmail(env, email) {
+    const apiKey = env.FIREBASE_WEB_API_KEY;
+    if (!apiKey) throw new Error('web_api_key_missing');
+
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${encodeURIComponent(apiKey)}`;
+    const body = {
+        requestType: 'PASSWORD_RESET',
+        email: email,
+    };
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+        let errCode = 'unknown';
+        try {
+            const parsed = await res.json();
+            errCode = (parsed && parsed.error && parsed.error.message) || 'unknown';
+        } catch (_e) { /* noop */ }
+
+        if (errCode === 'EMAIL_NOT_FOUND') throw new Error('user_not_found');
+        throw new Error('password_reset_email_failed');
+    }
+
+    const data = await res.json();
+    return { email: data.email || email };
+}
+
+async function disableFirebaseAuthUser(env, uid) {
+    return updateFirebaseAuthUser(env, uid, { disabled: true });
+}
+
+async function enableFirebaseAuthUser(env, uid) {
+    return updateFirebaseAuthUser(env, uid, { disabled: false });
+}
+
+async function updateFirebaseAuthUser(env, uid, props) {
+    const projectId = env.FIREBASE_PROJECT_ID;
+    if (!projectId) throw new Error('project_id_missing');
+
+    const accessToken = await getServiceAccountAccessToken(env);
+    const url = `${IDENTITY_TOOLKIT_BASE}/projects/${encodeURIComponent(projectId)}/accounts:update`;
+    const body = Object.assign({ localId: uid }, props);
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!res.ok) throw new Error('firebase_user_update_failed');
+    return res.json();
+}
+
+async function deleteFirebaseAuthUser(env, uid) {
+    const projectId = env.FIREBASE_PROJECT_ID;
+    if (!projectId) throw new Error('project_id_missing');
+
+    const accessToken = await getServiceAccountAccessToken(env);
+    const url = `${IDENTITY_TOOLKIT_BASE}/projects/${encodeURIComponent(projectId)}/accounts:delete`;
+
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ localId: uid }),
+    });
+
+    if (!res.ok) throw new Error('firebase_user_delete_failed');
+    return true;
+}
+
 /* ============================================================================
  * 7. Realtime Database access helpers
  * ========================================================================= */
@@ -604,6 +744,46 @@ async function resolveAuthContext(env, decodedToken) {
         return { ok: false, code: 'forbidden', reason: 'invalid_role' };
     }
 
+    // Activation status check. Accounts created through the invitation flow
+    // start with activationStatus = "pending". They become active only after
+    // the user has proven email ownership by completing the Firebase
+    // password reset flow, at which point Firebase sets emailVerified = true
+    // on the account. The Firebase maintainers confirm this behavior:
+    // resetting the password via an email action sets emailVerified to true.
+    //
+    // The Worker trusts its own activationStatus field as the authoritative
+    // gate. Firebase's emailVerified flag is consulted only as the trigger
+    // that flips the status from pending to active. This keeps the business
+    // rule under our control even if Firebase's behavior changes.
+    let activationStatus = typeof userRecord.activationStatus === 'string'
+        ? userRecord.activationStatus
+        : 'active';
+
+    if (activationStatus === 'pending') {
+        // If Firebase reports the email as verified, the user has completed
+        // the password reset. Promote the account to active on the fly, so
+        // the very next request succeeds.
+        if (decodedToken.email_verified === true) {
+            activationStatus = 'active';
+            try {
+                const now = new Date().toISOString();
+                await rtdbSet(env, accessToken, `/users/${encodeURIComponent(uid)}/activationStatus`, 'active');
+                await rtdbSet(env, accessToken, `/users/${encodeURIComponent(uid)}/activatedAt`, now);
+                if (userRecord.employeeId) {
+                    await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(userRecord.employeeId)}/activationStatus`, 'active');
+                    await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(userRecord.employeeId)}/activatedAt`, now);
+                }
+            } catch (_e) {
+                // Promotion write failed. The account remains pending for
+                // this request; the next request will retry. We do not
+                // block the request on this write, because the user has
+                // already proven email ownership.
+            }
+        } else {
+            return { ok: false, code: 'forbidden', reason: 'activation_pending' };
+        }
+    }
+
     return {
         ok: true,
         context: {
@@ -613,6 +793,7 @@ async function resolveAuthContext(env, decodedToken) {
             orgId: typeof userRecord.orgId === 'string' ? userRecord.orgId : null,
             employeeId: typeof userRecord.employeeId === 'string' ? userRecord.employeeId : null,
             displayName: typeof userRecord.displayName === 'string' ? userRecord.displayName : '',
+            activationStatus: activationStatus,
         },
     };
 }
@@ -1421,20 +1602,26 @@ function shapeEmployeeFull(rec, options) {
 }
 
 function generateEmployeeCode(existingCodes) {
-    // Sequential codes in the form EMP0001, EMP0002, ... Uniqueness is
-    // enforced by taking the current maximum and adding one. A concurrent
-    // create could theoretically produce the same code in a very short
-    // window; HR administration operations are rare enough that this is
-    // acceptable. A future version can move the counter into a transaction.
+    // Employee codes are generated in the form EMP-YYYY-NNN, where YYYY is
+    // the current calendar year (UTC) and NNN is a sequential number that
+    // restarts at 001 each year. Example: EMP-2026-001.
+    //
+    // The sequence is derived from the existing codes for the same year.
+    // HR administration operations are rare enough that a concurrent create
+    // racing within the same millisecond is acceptable; a future version
+    // can move this into a transactional counter.
+    const year = String(new Date().getUTCFullYear());
+    const prefix = `EMP-${year}-`;
     let maxNum = 0;
     for (const code of existingCodes) {
-        const m = /^EMP(\d+)$/.exec(String(code || ''));
-        if (m) {
-            const n = parseInt(m[1], 10);
-            if (Number.isFinite(n) && n > maxNum) maxNum = n;
-        }
+        const s = String(code || '');
+        if (!s.startsWith(prefix)) continue;
+        const tail = s.slice(prefix.length);
+        if (!/^\d+$/.test(tail)) continue;
+        const n = parseInt(tail, 10);
+        if (Number.isFinite(n) && n > maxNum) maxNum = n;
     }
-    return 'EMP' + String(maxNum + 1).padStart(4, '0');
+    return prefix + String(maxNum + 1).padStart(3, '0');
 }
 
 /* ----------------------------------------------------------------------------
@@ -1573,6 +1760,11 @@ async function handleEmployeeCreate(request, env, requestId, corsHeaders) {
     }
     const clean = validated.cleaned;
 
+    // Optional flag. Default true: onboarding is the standard flow. Admin
+    // may pass sendInvite: false when migrating existing data, in which case
+    // no Firebase Auth account is created and no email is sent.
+    const sendInvite = !(body.data && body.data.sendInvite === false);
+
     let accessToken;
     try {
         accessToken = await getServiceAccountAccessToken(env);
@@ -1580,7 +1772,7 @@ async function handleEmployeeCreate(request, env, requestId, corsHeaders) {
         return errorResponse('server_error', 500, corsHeaders, requestId);
     }
 
-    // Duplicate checks
+    // Duplicate checks against employees.
     let all;
     try {
         all = await rtdbGet(env, accessToken, '/employees');
@@ -1622,11 +1814,35 @@ async function handleEmployeeCreate(request, env, requestId, corsHeaders) {
         : `emp-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
     const now = new Date().toISOString();
+    const displayName = `${clean.firstName} ${clean.lastName || ''}`.trim();
+
+    // --- Firebase Auth user creation (only when inviting) ----------------
+    let firebaseUid = clean.uid || null;
+    let inviteState = 'not_requested';
+    let inviteError = '';
+
+    if (sendInvite) {
+        try {
+            const created = await createFirebaseAuthUser(env, clean.email, displayName);
+            firebaseUid = created.uid;
+            inviteState = 'user_created';
+        } catch (err) {
+            const msg = (err && err.message) || '';
+            if (msg === 'email_already_exists') {
+                return errorResponse('conflict', 409, corsHeaders, requestId, {
+                    fields: { email: 'A sign-in account already exists for this email. Use a different email or recover the existing account.' },
+                });
+            }
+            return errorResponse('server_error', 500, corsHeaders, requestId);
+        }
+    }
+
+    // --- Employee record ------------------------------------------------
     const record = {
         employeeId,
         employeeCode,
         orgId:          ctx.orgId || null,
-        uid:            clean.uid || null,
+        uid:            firebaseUid,
         firstName:      clean.firstName,
         lastName:       clean.lastName,
         email:          clean.email,
@@ -1641,19 +1857,73 @@ async function handleEmployeeCreate(request, env, requestId, corsHeaders) {
         employmentType: clean.employmentType,
         status:         clean.status || 'active',
         bank:           clean.bank || { bankName: '', accountNumber: '', ifsc: '' },
+        activationStatus: sendInvite ? 'pending' : 'active',
+        invitedAt:      sendInvite ? now : '',
+        activatedAt:    sendInvite ? '' : now,
+        lastInviteAt:   sendInvite ? now : '',
         createdAt:      now,
         updatedAt:      now,
         createdBy:      ctx.uid,
         updatedBy:      ctx.uid,
     };
 
+    // Write the employee record. If this fails after Firebase Auth user was
+    // created, roll back the Firebase user so the email is not orphaned.
     try {
         await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}`, record);
     } catch (_e) {
+        if (sendInvite && firebaseUid) {
+            try { await deleteFirebaseAuthUser(env, firebaseUid); } catch (_e2) { /* best effort */ }
+        }
         return errorResponse('server_error', 500, corsHeaders, requestId);
     }
 
-    return jsonResponse(shapeEmployeeFull(record, { includeBank: true }), 201, corsHeaders, requestId);
+    // --- users/{uid} record (when inviting) -----------------------------
+    if (sendInvite && firebaseUid) {
+        const userRecord = {
+            uid: firebaseUid,
+            email: clean.email,
+            role: 'employee',
+            orgId: ctx.orgId || null,
+            employeeId: employeeId,
+            displayName: displayName,
+            enabled: true,
+            activationStatus: 'pending',
+            activatedAt: '',
+            createdAt: now,
+            updatedAt: now,
+            createdBy: ctx.uid,
+        };
+        try {
+            await rtdbSet(env, accessToken, `/users/${encodeURIComponent(firebaseUid)}`, userRecord);
+        } catch (_e) {
+            // Roll back: employee record + Firebase user.
+            try { await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}`, null); } catch (_e2) { /* best effort */ }
+            try { await deleteFirebaseAuthUser(env, firebaseUid); } catch (_e2) { /* best effort */ }
+            return errorResponse('server_error', 500, corsHeaders, requestId);
+        }
+    }
+
+    // --- Send invitation email ------------------------------------------
+    if (sendInvite) {
+        try {
+            await sendPasswordResetEmail(env, clean.email);
+            inviteState = 'invited';
+        } catch (err) {
+            const msg = (err && err.message) || '';
+            // Account exists but the email could not be sent. The admin can
+            // resend. We still return success with a warning so the admin
+            // knows the record was created.
+            inviteState = 'invite_failed';
+            inviteError = msg || 'invite_email_failed';
+        }
+    }
+
+    const response = shapeEmployeeFull(record, { includeBank: true });
+    response.inviteState = inviteState;
+    if (inviteError) response.inviteError = inviteError;
+
+    return jsonResponse(response, 201, corsHeaders, requestId);
 }
 
 async function handleEmployeeUpdate(request, env, requestId, corsHeaders, params) {
@@ -1818,8 +2088,91 @@ async function handleEmployeeStatusUpdate(request, env, requestId, corsHeaders, 
 }
 
 /* ----------------------------------------------------------------------------
- * Attendance — validation and shaping
+ * Resend invitation
+ *
+ * Re-sends the Firebase password reset email for an employee whose account
+ * is still pending activation. Refuses for already-activated accounts and
+ * for employees that have no linked Firebase account.
  * ------------------------------------------------------------------------- */
+
+async function handleEmployeeResendInvite(request, env, requestId, corsHeaders, params) {
+    const authRes = await requireAuth(request, env, corsHeaders, requestId);
+    if (!authRes.ok) return authRes.response;
+    const ctx = authRes.context;
+
+    if (!isAdmin(ctx.role)) {
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const employeeId = params && params.employeeId ? String(params.employeeId) : '';
+    if (!employeeId) {
+        return errorResponse('bad_request', 400, corsHeaders, requestId);
+    }
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    let employee;
+    try {
+        employee = await rtdbGet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}`);
+    } catch (_e) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+    if (!employee || typeof employee !== 'object') {
+        return errorResponse('not_found', 404, corsHeaders, requestId);
+    }
+
+    if (!employee.uid) {
+        return errorResponse('conflict', 409, corsHeaders, requestId, {
+            fields: { invite: 'This employee has no linked sign-in account.' },
+        });
+    }
+
+    if (employee.activationStatus === 'active') {
+        return errorResponse('conflict', 409, corsHeaders, requestId, {
+            fields: { invite: 'This account has already been activated.' },
+        });
+    }
+
+    if (!employee.email) {
+        return errorResponse('conflict', 409, corsHeaders, requestId, {
+            fields: { invite: 'This employee has no email address.' },
+        });
+    }
+
+    try {
+        await sendPasswordResetEmail(env, employee.email);
+    } catch (err) {
+        const msg = (err && err.message) || '';
+        if (msg === 'user_not_found') {
+            return errorResponse('conflict', 409, corsHeaders, requestId, {
+                fields: { invite: 'The sign-in account no longer exists.' },
+            });
+        }
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    const now = new Date().toISOString();
+    try {
+        await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}/lastInviteAt`, now);
+        await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}/updatedAt`, now);
+        await rtdbSet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}/updatedBy`, ctx.uid);
+    } catch (_e) { /* non-critical */ }
+
+    return jsonResponse({
+        employeeId,
+        email: employee.email,
+        lastInviteAt: now,
+    }, 200, corsHeaders, requestId);
+}
+
+/* ----------------------------------------------------------------------------
+ * Attendance — validation and shaping
+ * ---------------------------------------------------------------------------- */
 
 const ATTENDANCE_STATUSES = ['present', 'absent', 'leave', 'half_day', 'holiday'];
 
@@ -2416,6 +2769,12 @@ function matchRoute(method, pathname) {
         if (method === 'PATCH') return { name: 'employeeStatusUpdate', requiresAuth: true, params: { employeeId } };
     }
 
+    // /employees/:id/resend-invite
+    if (parts.length === 3 && parts[0] === 'employees' && parts[2] === 'resend-invite') {
+        const employeeId = decodeURIComponent(parts[1]);
+        if (method === 'POST') return { name: 'employeeResendInvite', requiresAuth: true, params: { employeeId } };
+    }
+
     // /attendance                       -> list (GET)
     if (parts.length === 1 && parts[0] === 'attendance') {
         if (method === 'GET') return { name: 'attendanceList', requiresAuth: true };
@@ -2514,6 +2873,8 @@ export default {
                     return await handleEmployeeUpdate(request, env, requestId, corsHeaders, route.params);
                 case 'employeeStatusUpdate':
                     return await handleEmployeeStatusUpdate(request, env, requestId, corsHeaders, route.params);
+                case 'employeeResendInvite':
+                    return await handleEmployeeResendInvite(request, env, requestId, corsHeaders, route.params);
                 case 'attendanceList':
                     return await handleAttendanceList(request, env, requestId, corsHeaders);
                 case 'attendanceSummary':
