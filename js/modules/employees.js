@@ -4,29 +4,7 @@
  * ----------------------------------------------------------------------------
  * js/modules/employees.js
  *
- * Employees module.
- *
- * One module, multiple internal views:
- *   - list     : directory with search, filter, pagination
- *   - detail   : read-only view of a single employee
- *   - create   : form to add a new employee
- *   - edit     : form to modify an existing employee
- *
- * Views are rendered inside the content outlet. No additional HTML files.
- * No page transitions. Every view is a normal DOM replacement.
- *
- * Role behaviour:
- *   - super_admin and hr_admin: full directory, create, edit, status change
- *   - employee: routed away by the router; if reached directly, an
- *     access-denied message is rendered, and no data is fetched.
- *
- * All data comes from the endpoints delivered in Phase 5c. All validation
- * errors from the Worker are surfaced field by field. No fabricated rows,
- * no placeholder employees, no fake success messages.
- *
- * Lifecycle:
- *   mount(container, context)  -> render initial view
- *   unmount()                  -> abort in-flight work, drop state
+ * Employees module with invite-status integration.
  */
 
 import { apiGet, apiPost, apiPatch, ApiError } from '../api.js';
@@ -44,25 +22,18 @@ import {
     createFormField,
     setFieldError,
     clearFormErrors,
-    confirmDialog,
     showToast,
-    getRoleLabel,
     isValidEmail,
     isValidISODate,
     todayISO,
     openModal,
 } from '../ui.js';
 
-/* ----------------------------------------------------------------------------
- * Module state
- * ------------------------------------------------------------------------- */
-
 let mounted = false;
 let containerRef = null;
 let contextRef = null;
 let abortController = null;
 
-// List view state
 const listState = {
     search: '',
     status: '',
@@ -72,22 +43,14 @@ const listState = {
     pageSize: 25,
 };
 
-// Departments and designations loaded once per mount. Used only to render
-// dropdown labels — no data is fabricated, and if the fetch fails, the
-// dropdowns show raw IDs instead.
 let refData = {
-    departments: {},     // id -> name
-    designations: {},    // id -> title
+    departments: {},
+    designations: {},
     loaded: false,
 };
 
-/* ----------------------------------------------------------------------------
- * Public API
- * ------------------------------------------------------------------------- */
-
 export async function mount(container, context) {
     if (!container) return;
-
     mounted = true;
     containerRef = container;
     contextRef = context;
@@ -97,17 +60,13 @@ export async function mount(container, context) {
     }
     abortController = new AbortController();
 
-    // Route guard is enforced by the router. This is a second layer in case
-    // the module is reached by a code path the router did not anticipate.
     const role = context && typeof context.role === 'string' ? context.role : '';
     if (role === 'employee') {
         renderAccessDenied();
         return;
     }
 
-    // Load reference data in the background. The list can render without it.
     loadReferenceData();
-
     await renderListView();
 }
 
@@ -117,10 +76,6 @@ export function unmount() {
     contextRef = null;
     abortController = null;
 }
-
-/* ----------------------------------------------------------------------------
- * Reference data (departments, designations)
- * ------------------------------------------------------------------------- */
 
 async function loadReferenceData() {
     if (refData.loaded) return;
@@ -133,7 +88,6 @@ async function loadReferenceData() {
         refData.designations = indexById(desigRes, 'title');
         refData.loaded = true;
     } catch (_e) {
-        // Leave refData empty. Lists will fall back to raw IDs.
         refData.loaded = true;
     }
 }
@@ -169,14 +123,12 @@ function lookupDesignation(id) {
 
 async function renderListView() {
     if (!mounted || !containerRef) return;
-
     containerRef.replaceChildren();
 
-    // Page head
     const head = el('div', { class: 'page-head' }, [
         el('div', {}, [
             el('h1', { class: 'page-title', text: 'Employees' }),
-            el('p', { class: 'page-subtitle', text: 'Manage employee records, departments, and designations.' }),
+            el('p', { class: 'page-subtitle', text: 'Manage employee records, invitations, and account status.' }),
         ]),
         el('div', { class: 'page-head-actions' }, [
             primaryButton('Add Employee', 'plus', () => openCreateView()),
@@ -184,7 +136,6 @@ async function renderListView() {
     ]);
     containerRef.appendChild(head);
 
-    // Filter bar
     const filterBar = el('div', { class: 'filter-bar' });
 
     const searchInput = el('input', {
@@ -200,10 +151,7 @@ async function renderListView() {
         refreshList();
     }, 300));
 
-    const statusSelect = el('select', {
-        class: 'form-select',
-        'aria-label': 'Filter by status',
-    }, [
+    const statusSelect = el('select', { class: 'form-select', 'aria-label': 'Status filter' }, [
         option('', 'All statuses', listState.status === ''),
         option('active', 'Active', listState.status === 'active'),
         option('inactive', 'Inactive', listState.status === 'inactive'),
@@ -219,7 +167,6 @@ async function renderListView() {
     filterBar.appendChild(statusSelect);
     containerRef.appendChild(filterBar);
 
-    // List area — a placeholder that refreshList() fills in.
     const listArea = el('div', { id: 'employees-list-area' });
     containerRef.appendChild(listArea);
 
@@ -263,7 +210,6 @@ async function refreshList() {
     const total = Number(response && response.total) || 0;
 
     if (items.length === 0 && total === 0 && !listState.search && !listState.status) {
-        // First-load empty state — the entire directory is empty.
         area.replaceChildren(createEmptyState({
             icon: 'users',
             title: 'No employees yet',
@@ -275,7 +221,6 @@ async function refreshList() {
     }
 
     if (items.length === 0) {
-        // Filtered to zero results.
         area.replaceChildren(createEmptyState({
             icon: 'search',
             title: 'No matching employees',
@@ -289,9 +234,8 @@ async function refreshList() {
             { key: 'employeeCode', label: 'Code', render: (r) => el('span', { class: 'text-mono', text: r.employeeCode || '—' }) },
             { key: 'name', label: 'Name', render: (r) => el('span', { text: fullName(r) }) },
             { key: 'email', label: 'Email' },
-            { key: 'department', label: 'Department', render: (r) => lookupDepartment(r.departmentId) },
-            { key: 'designation', label: 'Designation', render: (r) => lookupDesignation(r.designationId) },
             { key: 'status', label: 'Status', render: (r) => statusBadge(r.status) },
+            { key: 'account', label: 'Account', render: (r) => accountBadge(r) },
             {
                 key: 'actions',
                 label: 'Actions',
@@ -305,26 +249,23 @@ async function refreshList() {
         ],
         rows: items,
         rowKey: (r) => r.employeeId,
-        emptyTitle: 'No employees',
     });
 
     area.replaceChildren(table);
 
-    const pagination = renderPagination({
+    area.appendChild(renderPagination({
         page: listState.page,
         pageSize: listState.pageSize,
         total: total,
         onChange: (newPage) => {
             listState.page = newPage;
             refreshList();
-            // Scroll the content area to top so the user sees the new page.
             const content = document.getElementById('app-content');
             if (content && typeof content.scrollIntoView === 'function') {
                 content.scrollIntoView({ behavior: 'auto', block: 'start' });
             }
         },
-    });
-    area.appendChild(pagination);
+    }));
 }
 
 /* ----------------------------------------------------------------------------
@@ -345,10 +286,7 @@ async function openDetailView(employeeId) {
     } catch (err) {
         if (err instanceof ApiError && err.code === 'aborted') return;
         if (!mounted) return;
-        renderErrorWithBack(
-            'Unable to load employee',
-            (err && err.message) || 'Please try again.'
-        );
+        renderErrorWithBack('Unable to load employee', (err && err.message) || 'Please try again.');
         return;
     }
 
@@ -356,7 +294,19 @@ async function openDetailView(employeeId) {
 
     containerRef.replaceChildren();
 
-    // Breadcrumb-style head
+    const activation = record.activationStatus || 'active';
+    const isPending = activation === 'pending';
+    const hasUid = Boolean(record.uid);
+
+    const actions = [
+        secondaryButton('Edit', 'edit', () => openEditView(record.employeeId)),
+        primaryButton('Change Status', 'refresh', () => openStatusModal(record)),
+    ];
+
+    if (isPending && hasUid) {
+        actions.unshift(secondaryButton('Resend Invitation', 'refresh', () => resendInvite(record)));
+    }
+
     const head = el('div', { class: 'page-head' }, [
         el('div', {}, [
             el('div', { class: 'flex items-center gap-2 mb-2' }, [
@@ -365,12 +315,28 @@ async function openDetailView(employeeId) {
             el('h1', { class: 'page-title', text: fullName(record) }),
             el('p', { class: 'page-subtitle', text: `Employee code: ${record.employeeCode || '—'}` }),
         ]),
-        el('div', { class: 'page-head-actions' }, [
-            secondaryButton('Edit', 'edit', () => openEditView(record.employeeId)),
-            primaryButton('Change Status', 'refresh', () => openStatusModal(record)),
-        ]),
+        el('div', { class: 'page-head-actions' }, actions),
     ]);
     containerRef.appendChild(head);
+
+    // Account status card — prominently displayed.
+    containerRef.appendChild(el('div', { class: 'card mt-4' }, [
+        el('div', { class: 'card-header' }, [
+            el('h2', { class: 'card-title', text: 'Account Status' }),
+        ]),
+        el('div', { class: 'card-body' }, [
+            el('div', { class: 'form' }, [
+                infoRow('Sign-in Account', hasUid ? 'Linked' : 'Not linked'),
+                infoRow('Activation', titleCase(activation)),
+                infoRow('Invited', record.invitedAt ? formatDate(record.invitedAt) : '—'),
+                infoRow('Last Invite Sent', record.lastInviteAt ? formatDate(record.lastInviteAt) : '—'),
+                infoRow('Activated', record.activatedAt ? formatDate(record.activatedAt) : '—'),
+            ]),
+            isPending && hasUid
+                ? el('p', { class: 'text-muted mt-3', text: 'This employee has been invited but has not yet set their password. Use "Resend Invitation" if they did not receive the email.' })
+                : null,
+        ].filter(Boolean)),
+    ]));
 
     const sections = el('div', { class: 'grid-2 mt-4' }, [
         infoCard('Employment', [
@@ -392,13 +358,9 @@ async function openDetailView(employeeId) {
     containerRef.appendChild(sections);
 
     containerRef.appendChild(el('div', { class: 'mt-4' }, [
-        infoCard('Address', [
-            ['Address', record.address || '—'],
-        ]),
+        infoCard('Address', [['Address', record.address || '—']]),
     ]));
 
-    // Bank details are returned only when the caller is authorized to see
-    // them. If the field is absent, do not render an empty bank section.
     if (record.bank) {
         containerRef.appendChild(el('div', { class: 'mt-4' }, [
             infoCard('Bank Details', [
@@ -409,14 +371,43 @@ async function openDetailView(employeeId) {
         ]));
     }
 
-    // Metadata — visible to admins. Useful for auditing.
     containerRef.appendChild(el('div', { class: 'mt-4' }, [
         infoCard('Record Information', [
             ['Created', record.createdAt ? formatDate(record.createdAt) : '—'],
             ['Updated', record.updatedAt ? formatDate(record.updatedAt) : '—'],
-            ['Linked Account', record.uid ? 'Yes' : 'No'],
         ]),
     ]));
+}
+
+async function resendInvite(record) {
+    if (!record || !record.employeeId) return;
+
+    const confirmed = await new Promise((resolve) => {
+        openModal({
+            title: 'Resend Invitation',
+            body: el('p', { text: `Send a new activation email to ${record.email}? The previous link, if unused, will remain valid until it expires.` }),
+            size: 'sm',
+            actions: [
+                { label: 'Cancel', variant: 'secondary', onClick: () => resolve(false) },
+                { label: 'Send', variant: 'primary', onClick: () => resolve(true) },
+            ],
+            onClose: () => resolve(false),
+        });
+    });
+
+    if (!confirmed) return;
+
+    try {
+        await apiPost(`/employees/${encodeURIComponent(record.employeeId)}/resend-invite`);
+        showToast('Invitation resent.', { type: 'success' });
+        openDetailView(record.employeeId);
+    } catch (err) {
+        if (err instanceof ApiError) {
+            showToast(err.message || 'Unable to resend invitation.', { type: 'error' });
+        } else {
+            showToast('Unable to resend invitation.', { type: 'error' });
+        }
+    }
 }
 
 /* ----------------------------------------------------------------------------
@@ -445,10 +436,6 @@ function openCreateView() {
     });
 }
 
-/* ----------------------------------------------------------------------------
- * Edit view
- * ------------------------------------------------------------------------- */
-
 async function openEditView(employeeId) {
     if (!employeeId) return;
     if (!mounted || !containerRef) return;
@@ -463,10 +450,7 @@ async function openEditView(employeeId) {
     } catch (err) {
         if (err instanceof ApiError && err.code === 'aborted') return;
         if (!mounted) return;
-        renderErrorWithBack(
-            'Unable to load employee',
-            (err && err.message) || 'Please try again.'
-        );
+        renderErrorWithBack('Unable to load employee', (err && err.message) || 'Please try again.');
         return;
     }
 
@@ -478,10 +462,6 @@ async function openEditView(employeeId) {
         initial: record,
     });
 }
-
-/* ----------------------------------------------------------------------------
- * Employee form (used for both create and edit)
- * ------------------------------------------------------------------------- */
 
 function openEmployeeForm(opts) {
     if (!mounted || !containerRef) return;
@@ -502,30 +482,19 @@ function openEmployeeForm(opts) {
             ]),
             el('h1', { class: 'page-title', text: mode === 'create' ? 'Add Employee' : 'Edit Employee' }),
             el('p', { class: 'page-subtitle', text: mode === 'create'
-                ? 'Create a new employee record. Fields marked with an asterisk are required.'
-                : 'Update this employee record. Leave a field blank to keep its current value.' }),
+                ? 'Create a new employee. An invitation email will be sent so they can set their own password.'
+                : 'Update this employee record.' }),
         ]),
     ]);
     containerRef.appendChild(head);
 
-    // Fields
     const fields = {};
 
-    fields.firstName = createFormField({
-        label: 'First Name', required: true, value: initial.firstName || '', name: 'firstName',
-    });
-    fields.lastName = createFormField({
-        label: 'Last Name', value: initial.lastName || '', name: 'lastName',
-    });
-    fields.email = createFormField({
-        label: 'Email', required: true, type: 'email', value: initial.email || '', name: 'email',
-    });
-    fields.phone = createFormField({
-        label: 'Phone', value: initial.phone || '', name: 'phone',
-    });
-    fields.dateOfBirth = createFormField({
-        label: 'Date of Birth', type: 'date', value: initial.dateOfBirth || '', name: 'dateOfBirth',
-    });
+    fields.firstName = createFormField({ label: 'First Name', required: true, value: initial.firstName || '', name: 'firstName' });
+    fields.lastName = createFormField({ label: 'Last Name', value: initial.lastName || '', name: 'lastName' });
+    fields.email = createFormField({ label: 'Email', required: true, type: 'email', value: initial.email || '', name: 'email' });
+    fields.phone = createFormField({ label: 'Phone', value: initial.phone || '', name: 'phone' });
+    fields.dateOfBirth = createFormField({ label: 'Date of Birth', type: 'date', value: initial.dateOfBirth || '', name: 'dateOfBirth' });
     fields.gender = createFormField({
         label: 'Gender', type: 'select', value: initial.gender || '', name: 'gender',
         options: [
@@ -535,9 +504,7 @@ function openEmployeeForm(opts) {
         ],
         placeholder: 'Select',
     });
-    fields.joinDate = createFormField({
-        label: 'Join Date', required: true, type: 'date', value: initial.joinDate || todayISO(), name: 'joinDate',
-    });
+    fields.joinDate = createFormField({ label: 'Join Date', required: true, type: 'date', value: initial.joinDate || todayISO(), name: 'joinDate' });
     fields.employmentType = createFormField({
         label: 'Employment Type', required: true, type: 'select',
         value: initial.employmentType || 'full_time', name: 'employmentType',
@@ -550,33 +517,25 @@ function openEmployeeForm(opts) {
     });
     fields.departmentId = createFormField({
         label: 'Department', type: 'select', value: initial.departmentId || '', name: 'departmentId',
-        options: optionsFromMap(refData.departments),
-        placeholder: 'Not assigned',
+        options: optionsFromMap(refData.departments), placeholder: 'Not assigned',
     });
     fields.designationId = createFormField({
         label: 'Designation', type: 'select', value: initial.designationId || '', name: 'designationId',
-        options: optionsFromMap(refData.designations),
-        placeholder: 'Not assigned',
+        options: optionsFromMap(refData.designations), placeholder: 'Not assigned',
     });
-    fields.address = createFormField({
-        label: 'Address', type: 'textarea', value: initial.address || '', name: 'address',
-    });
-    fields.emergencyContact = createFormField({
-        label: 'Emergency Contact', value: initial.emergencyContact || '', name: 'emergencyContact',
-    });
+    fields.address = createFormField({ label: 'Address', type: 'textarea', value: initial.address || '', name: 'address' });
+    fields.emergencyContact = createFormField({ label: 'Emergency Contact', value: initial.emergencyContact || '', name: 'emergencyContact' });
 
     const bank = initial.bank || {};
-    fields.bankName = createFormField({
-        label: 'Bank Name', value: bank.bankName || '', name: 'bankName',
-    });
-    fields.accountNumber = createFormField({
-        label: 'Account Number', value: bank.accountNumber || '', name: 'accountNumber',
-    });
-    fields.ifsc = createFormField({
-        label: 'IFSC', value: bank.ifsc || '', name: 'ifsc',
-    });
+    fields.bankName = createFormField({ label: 'Bank Name', value: bank.bankName || '', name: 'bankName' });
+    fields.accountNumber = createFormField({ label: 'Account Number', value: bank.accountNumber || '', name: 'accountNumber' });
+    fields.ifsc = createFormField({ label: 'IFSC', value: bank.ifsc || '', name: 'ifsc' });
 
-    const form = el('form', { class: 'form', novalidate: true }, [
+    const inviteCheckbox = mode === 'create'
+        ? createInviteCheckbox()
+        : null;
+
+    const formChildren = [
         sectionHeading('Personal Information'),
         el('div', { class: 'form-row' }, [fields.firstName.group, fields.lastName.group]),
         el('div', { class: 'form-row' }, [fields.email.group, fields.phone.group]),
@@ -593,30 +552,34 @@ function openEmployeeForm(opts) {
         sectionHeading('Bank Details'),
         el('div', { class: 'form-row' }, [fields.bankName.group, fields.accountNumber.group]),
         fields.ifsc.group,
+    ];
 
+    if (inviteCheckbox) {
+        formChildren.push(
+            sectionHeading('Account & Invitation'),
+            inviteCheckbox.group
+        );
+    }
+
+    formChildren.push(
         el('div', { class: 'form-actions mt-4' }, [
+            el('button', {
+                type: 'submit',
+                class: 'btn btn-primary',
+                text: mode === 'create' ? 'Create Employee' : 'Save Changes',
+            }),
             (() => {
-                const btn = el('button', {
-                    type: 'submit',
-                    class: 'btn btn-primary',
-                    text: mode === 'create' ? 'Create Employee' : 'Save Changes',
-                });
-                return btn;
-            })(),
-            (() => {
-                const btn = el('button', {
-                    type: 'button',
-                    class: 'btn btn-secondary',
-                    text: 'Cancel',
-                });
+                const btn = el('button', { type: 'button', class: 'btn btn-secondary', text: 'Cancel' });
                 btn.addEventListener('click', () => {
                     if (mode === 'edit' && employeeId) openDetailView(employeeId);
                     else renderListView();
                 });
                 return btn;
             })(),
-        ]),
-    ]);
+        ])
+    );
+
+    const form = el('form', { class: 'form', novalidate: true }, formChildren);
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -625,14 +588,27 @@ function openEmployeeForm(opts) {
             employeeId,
             fields,
             form,
+            inviteCheckbox,
         });
     });
 
     containerRef.appendChild(form);
 }
 
+function createInviteCheckbox() {
+    const id = 'send-invite';
+    const input = el('input', { type: 'checkbox', id, checked: true });
+    const label = el('label', { for: id, class: 'form-check' }, [
+        input,
+        el('span', { text: 'Send invitation email so the employee can set their own password' }),
+    ]);
+    const help = el('p', { class: 'form-help', text: 'If unchecked, the employee record is created without a sign-in account. You can invite them later.' });
+    const group = el('div', { class: 'form-group' }, [label, help]);
+    return { group, input };
+}
+
 async function submitEmployeeForm(opts) {
-    const { mode, employeeId, fields, form } = opts;
+    const { mode, employeeId, fields, form, inviteCheckbox } = opts;
 
     clearFormErrors(Object.values(fields));
 
@@ -656,14 +632,16 @@ async function submitEmployeeForm(opts) {
         },
     };
 
-    // Local validation — fast feedback before the network call.
+    if (mode === 'create' && inviteCheckbox) {
+        payload.sendInvite = inviteCheckbox.input.checked;
+    }
+
     const localErrors = validateLocally(payload);
     if (Object.keys(localErrors).length > 0) {
         applyFieldErrors(fields, localErrors);
         return;
     }
 
-    // Find the submit button and disable it during the call.
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalLabel = submitBtn ? submitBtn.textContent : '';
     if (submitBtn) {
@@ -700,10 +678,16 @@ async function submitEmployeeForm(opts) {
         return;
     }
 
-    showToast(
-        mode === 'create' ? 'Employee created.' : 'Employee updated.',
-        { type: 'success' }
-    );
+    // Success — but distinguish invite state if the invite flow was requested.
+    if (mode === 'create' && result && result.inviteState === 'invite_failed') {
+        showToast('Employee created, but the invitation email could not be sent. Use "Resend Invitation" to retry.', { type: 'error' });
+    } else if (mode === 'create' && result && result.inviteState === 'invited') {
+        showToast('Employee created. Invitation email sent.', { type: 'success' });
+    } else if (mode === 'create' && result && result.inviteState === 'not_requested') {
+        showToast('Employee created without a sign-in account.', { type: 'success' });
+    } else {
+        showToast(mode === 'create' ? 'Employee created.' : 'Employee updated.', { type: 'success' });
+    }
 
     if (mode === 'create' && result && result.employeeId) {
         await openDetailView(result.employeeId);
@@ -727,31 +711,15 @@ function validateLocally(payload) {
     return errors;
 }
 
-/**
- * Extract field-level errors from an ApiError.
- *
- * Our Worker returns:
- *   { error: { code, message, requestId, fields: { name: 'msg' } } }
- *
- * js/api.js discards extra fields it does not know about, so the field map
- * is not directly exposed. We reconstruct it by re-reading the response
- * from the error. Since js/api.js does not expose the raw payload, we
- * parse it from the error message string only when possible. In practice,
- * the frontend's local validation catches the vast majority of cases
- * before a network call, so this function's main job is to map generic
- * messages cleanly.
- */
 function extractFieldErrors(err) {
     if (!err || typeof err !== 'object') return {};
     const map = {};
-    // If a future version of js/api.js attaches error.fields, use it.
     if (err.fields && typeof err.fields === 'object') {
         for (const [k, v] of Object.entries(err.fields)) {
             if (typeof v === 'string') map[k] = v;
         }
         return map;
     }
-    // Fall back to a generic email conflict message.
     if (err.code === 'conflict' && typeof err.message === 'string') {
         if (err.message.toLowerCase().includes('email')) map.email = 'This email is already in use.';
     }
@@ -763,16 +731,11 @@ function applyFieldErrors(fields, errors) {
         const field = fields[name];
         if (field) setFieldError(field, message);
     }
-    // Focus the first field with an error.
     const firstKey = Object.keys(errors)[0];
     if (firstKey && fields[firstKey] && fields[firstKey].input) {
         try { fields[firstKey].input.focus(); } catch (_e) { /* isolate */ }
     }
 }
-
-/* ----------------------------------------------------------------------------
- * Status change modal
- * ------------------------------------------------------------------------- */
 
 function openStatusModal(record) {
     const status = String(record.status || '').toLowerCase();
@@ -790,7 +753,7 @@ function openStatusModal(record) {
     });
 
     const notice = el('p', { class: 'text-muted', style: { marginTop: '12px' } }, [
-        'Deactivating or terminating an employee removes their access but does not delete their record. Historical payroll, attendance, and leave data remain intact.',
+        'Deactivating or terminating an employee removes their access but does not delete their record.',
     ]);
 
     openModal({
@@ -804,31 +767,20 @@ function openStatusModal(record) {
                 closeOnClick: false,
                 onClick: async (close) => {
                     const newStatus = statusField.input.value;
-                    if (newStatus === status) {
-                        close();
-                        return;
-                    }
+                    if (newStatus === status) { close(); return; }
                     try {
                         await apiPatch(`/employees/${encodeURIComponent(record.employeeId)}/status`, { status: newStatus });
                         showToast('Status updated.', { type: 'success' });
                         close();
                         openDetailView(record.employeeId);
                     } catch (err) {
-                        if (err instanceof ApiError) {
-                            showToast(err.message || 'Unable to update status.', { type: 'error' });
-                        } else {
-                            showToast('Unable to update status.', { type: 'error' });
-                        }
+                        showToast(err instanceof ApiError ? err.message : 'Unable to update status.', { type: 'error' });
                     }
                 },
             },
         ],
     });
 }
-
-/* ----------------------------------------------------------------------------
- * Render helpers
- * ------------------------------------------------------------------------- */
 
 function fullName(r) {
     if (!r) return '—';
@@ -840,6 +792,17 @@ function statusBadge(status) {
     const label = titleCase(s || '—');
     const cls = 'status' + (s === 'active' ? ' is-solid' : s === 'inactive' ? ' is-outline' : ' is-muted');
     return el('span', { class: cls }, [ label ]);
+}
+
+function accountBadge(r) {
+    const activation = String(r.activationStatus || 'active').toLowerCase();
+    if (!r.uid) {
+        return el('span', { class: 'status is-muted' }, ['No Account']);
+    }
+    if (activation === 'pending') {
+        return el('span', { class: 'status is-outline' }, ['Pending Invite']);
+    }
+    return el('span', { class: 'status' }, ['Active']);
 }
 
 function primaryButton(label, iconName, onClick) {
@@ -876,17 +839,15 @@ function optionsFromMap(map) {
 
 function infoCard(title, pairs) {
     return el('div', { class: 'card' }, [
-        el('div', { class: 'card-header' }, [
-            el('h2', { class: 'card-title', text: title }),
-        ]),
-        el('div', { class: 'card-body' }, [
-            el('div', { class: 'form' }, pairs.map(([label, value]) =>
-                el('div', { class: 'flex items-center justify-between gap-3' }, [
-                    el('span', { class: 'text-muted', text: String(label) }),
-                    el('span', { class: 'text-mono', text: String(value === null || value === undefined || value === '' ? '—' : value) }),
-                ])
-            )),
-        ]),
+        el('div', { class: 'card-header' }, [el('h2', { class: 'card-title', text: title })]),
+        el('div', { class: 'card-body' }, [el('div', { class: 'form' }, pairs.map(([label, value]) => infoRow(label, value)))]),
+    ]);
+}
+
+function infoRow(label, value) {
+    return el('div', { class: 'flex items-center justify-between gap-3' }, [
+        el('span', { class: 'text-muted', text: String(label) }),
+        el('span', { class: 'text-mono', text: String(value === null || value === undefined || value === '' ? '—' : value) }),
     ]);
 }
 
