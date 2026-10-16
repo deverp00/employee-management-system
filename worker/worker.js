@@ -822,15 +822,320 @@ async function handleAdminBootstrap(request, env, requestId, corsHeaders) {
     return jsonResponse(record, 201, corsHeaders, requestId);
 }
 
+/* ----------------------------------------------------------------------------
+ * Dashboard summary
+ *
+ * Role-specific summary data for the dashboard module. Admins receive
+ * organization-wide counts. Employees receive their own summary only.
+ *
+ * The endpoint returns zeros and empty arrays when the database has no data.
+ * It never fabricates counts, totals, or activity entries.
+ * ------------------------------------------------------------------------- */
+
+async function handleDashboardSummary(request, env, requestId, corsHeaders) {
+    const auth = await authenticateRequest(request, env);
+    if (!auth.ok) {
+        return errorResponse('unauthorized', 401, corsHeaders, requestId);
+    }
+
+    const resolved = await resolveAuthContext(env, auth.decoded);
+    if (!resolved.ok) {
+        if (resolved.code === 'server_error') {
+            return errorResponse('server_error', 500, corsHeaders, requestId);
+        }
+        return errorResponse('forbidden', 403, corsHeaders, requestId);
+    }
+
+    const ctx = resolved.context;
+
+    let accessToken;
+    try {
+        accessToken = await getServiceAccountAccessToken(env);
+    } catch (_err) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+
+    try {
+        const summary = (ctx.role === 'employee')
+            ? await buildEmployeeSummary(env, accessToken, ctx)
+            : await buildAdminSummary(env, accessToken, ctx);
+        return jsonResponse(summary, 200, corsHeaders, requestId);
+    } catch (_err) {
+        return errorResponse('server_error', 500, corsHeaders, requestId);
+    }
+}
+
+async function buildAdminSummary(env, accessToken, ctx) {
+    const generatedAt = new Date().toISOString();
+    const today = isoDateUTC();
+    const currentPeriod = today.slice(0, 7);
+    const currentYear = today.slice(0, 4);
+
+    // --- Employees --------------------------------------------------------
+    let employees = {};
+    try {
+        const raw = await rtdbGet(env, accessToken, '/employees');
+        if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+            employees = raw;
+        }
+    } catch (_e) { /* leave empty */ }
+
+    const employeeIds = Object.keys(employees);
+    let activeEmployees = 0;
+    let inactiveEmployees = 0;
+    for (const id of employeeIds) {
+        const rec = employees[id];
+        if (!rec || typeof rec !== 'object') continue;
+        const status = String(rec.status || '').toLowerCase();
+        if (status === 'active') activeEmployees += 1;
+        else if (status === 'inactive') inactiveEmployees += 1;
+    }
+
+    // --- Attendance today -------------------------------------------------
+    // Small organisations: fetch per-employee for the current date.
+    // Larger deployments should add a date-indexed node. See note in the
+    // project README under "Known limitations".
+    const attendanceToday = await countAttendanceForDate(env, accessToken, employeeIds, today);
+
+    // --- Pending leave ----------------------------------------------------
+    let leavePendingCount = 0;
+    try {
+        const raw = await rtdbGet(env, accessToken, '/leaveRequests');
+        if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+            for (const id of Object.keys(raw)) {
+                const rec = raw[id];
+                if (rec && typeof rec === 'object' && String(rec.status || '').toLowerCase() === 'pending') {
+                    leavePendingCount += 1;
+                }
+            }
+        }
+    } catch (_e) { /* leave zero */ }
+
+    // --- Current period payroll run --------------------------------------
+    let payrollCurrent = null;
+    try {
+        const raw = await rtdbGet(env, accessToken, '/payrollRuns');
+        if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+            for (const id of Object.keys(raw)) {
+                const run = raw[id];
+                if (!run || typeof run !== 'object') continue;
+                if (String(run.period || '') !== currentPeriod) continue;
+                payrollCurrent = {
+                    runId: String(run.runId || id),
+                    period: currentPeriod,
+                    status: String(run.status || 'draft'),
+                    employeeCount: Number(run.employeeCount) || 0,
+                    totalNetMinor: (run.totals && Number(run.totals.net)) || 0,
+                    totalGrossMinor: (run.totals && Number(run.totals.gross)) || 0,
+                };
+                break;
+            }
+        }
+    } catch (_e) { /* leave null */ }
+
+    // --- Recent activity --------------------------------------------------
+    // Fetches the auditLogs node and sorts client-side. For a first release
+    // this is acceptable; if the audit log grows, an indexed query with
+    // limitToLast will replace this. See "Known limitations" in the README.
+    let recentActivity = [];
+    try {
+        const raw = await rtdbGet(env, accessToken, '/auditLogs');
+        if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+            const entries = Object.values(raw)
+                .filter((l) => l && typeof l === 'object' && typeof l.timestamp === 'string')
+                .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)))
+                .slice(0, 10);
+            recentActivity = entries.map((l) => ({
+                action: String(l.action || ''),
+                target: String(l.target || ''),
+                targetId: String(l.targetId || ''),
+                actorRole: String(l.actorRole || ''),
+                timestamp: String(l.timestamp || ''),
+            }));
+        }
+    } catch (_e) { /* leave empty */ }
+
+    return {
+        role: ctx.role,
+        generatedAt,
+        period: currentPeriod,
+        year: currentYear,
+        employees: {
+            total: employeeIds.length,
+            active: activeEmployees,
+            inactive: inactiveEmployees,
+        },
+        attendanceToday: {
+            date: today,
+            present: attendanceToday.present,
+            absent: attendanceToday.absent,
+            leave: attendanceToday.leave,
+            notMarked: attendanceToday.notMarked,
+        },
+        leavePending: { count: leavePendingCount },
+        payrollCurrent,
+        recentActivity,
+    };
+}
+
+async function countAttendanceForDate(env, accessToken, employeeIds, date) {
+    // Bounded concurrency so a large employee roster does not open
+    // hundreds of simultaneous RTDB requests from a single isolate.
+    const CONCURRENCY = 20;
+    let present = 0;
+    let absent = 0;
+    let leave = 0;
+    let notMarked = 0;
+
+    for (let i = 0; i < employeeIds.length; i += CONCURRENCY) {
+        const batch = employeeIds.slice(i, i + CONCURRENCY);
+        const results = await Promise.all(batch.map(async (id) => {
+            try {
+                return await rtdbGet(env, accessToken, `/attendance/${encodeURIComponent(id)}/${date}`);
+            } catch (_e) {
+                return null;
+            }
+        }));
+
+        for (const rec of results) {
+            if (!rec || typeof rec !== 'object') {
+                notMarked += 1;
+                continue;
+            }
+            const status = String(rec.status || '').toLowerCase();
+            if (status === 'present') present += 1;
+            else if (status === 'absent') absent += 1;
+            else if (status === 'leave') leave += 1;
+            else notMarked += 1;
+        }
+    }
+
+    return { present, absent, leave, notMarked };
+}
+
+async function buildEmployeeSummary(env, accessToken, ctx) {
+    const generatedAt = new Date().toISOString();
+    const today = isoDateUTC();
+    const currentPeriod = today.slice(0, 7);
+    const currentYear = today.slice(0, 4);
+
+    if (!ctx.employeeId) {
+        return {
+            role: 'employee',
+            generatedAt,
+            period: currentPeriod,
+            year: currentYear,
+            myEmployee: null,
+            myAttendance: { month: currentPeriod, present: 0, absent: 0, leave: 0 },
+            myLeaveBalance: {},
+            myLatestPayslip: null,
+        };
+    }
+
+    const employeeId = ctx.employeeId;
+
+    let myEmployee = null;
+    try {
+        const rec = await rtdbGet(env, accessToken, `/employees/${encodeURIComponent(employeeId)}`);
+        if (rec && typeof rec === 'object') {
+            myEmployee = {
+                employeeId,
+                employeeCode: String(rec.employeeCode || ''),
+                firstName: String(rec.firstName || ''),
+                lastName: String(rec.lastName || ''),
+                departmentId: rec.departmentId ? String(rec.departmentId) : null,
+                designationId: rec.designationId ? String(rec.designationId) : null,
+                status: String(rec.status || ''),
+            };
+        }
+    } catch (_e) { /* leave null */ }
+
+    let attendance = { present: 0, absent: 0, leave: 0 };
+    try {
+        const raw = await rtdbGet(env, accessToken, `/attendance/${encodeURIComponent(employeeId)}`);
+        if (raw && typeof raw === 'object') {
+            for (const dateKey of Object.keys(raw)) {
+                if (!dateKey.startsWith(currentPeriod + '-')) continue;
+                const rec = raw[dateKey];
+                if (!rec || typeof rec !== 'object') continue;
+                const status = String(rec.status || '').toLowerCase();
+                if (status === 'present') attendance.present += 1;
+                else if (status === 'absent') attendance.absent += 1;
+                else if (status === 'leave') attendance.leave += 1;
+            }
+        }
+    } catch (_e) { /* leave zeros */ }
+
+    let myLeaveBalance = {};
+    try {
+        const raw = await rtdbGet(env, accessToken, `/leaveBalances/${encodeURIComponent(employeeId)}/${currentYear}`);
+        if (raw && typeof raw === 'object') {
+            for (const type of Object.keys(raw)) {
+                const b = raw[type];
+                if (!b || typeof b !== 'object') continue;
+                myLeaveBalance[type] = {
+                    allocated: Number(b.allocated) || 0,
+                    used: Number(b.used) || 0,
+                    remaining: Number(b.remaining) || 0,
+                };
+            }
+        }
+    } catch (_e) { /* leave empty */ }
+
+    let myLatestPayslip = null;
+    try {
+        const raw = await rtdbGet(env, accessToken, '/payslips');
+        if (raw && typeof raw === 'object') {
+            const mine = Object.values(raw)
+                .filter((s) => s && typeof s === 'object' && s.employeeId === employeeId)
+                .sort((a, b) => String(b.period || '').localeCompare(String(a.period || '')));
+            const latest = mine[0];
+            if (latest) {
+                myLatestPayslip = {
+                    payslipId: String(latest.payslipId || ''),
+                    period: String(latest.period || ''),
+                    netMinor: Number(latest.net) || 0,
+                    issuedAt: String(latest.issuedAt || ''),
+                };
+            }
+        }
+    } catch (_e) { /* leave null */ }
+
+    return {
+        role: 'employee',
+        generatedAt,
+        period: currentPeriod,
+        year: currentYear,
+        myEmployee,
+        myAttendance: {
+            month: currentPeriod,
+            present: attendance.present,
+            absent: attendance.absent,
+            leave: attendance.leave,
+        },
+        myLeaveBalance,
+        myLatestPayslip,
+    };
+}
+
+function isoDateUTC() {
+    const d = new Date();
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
 /* ============================================================================
  * 13. Router
  * ========================================================================= */
 
 function matchRoute(method, pathname) {
-    if (method === 'GET'  && pathname === '/health')         return { name: 'health' };
-    if (method === 'GET'  && pathname === '/public/config')  return { name: 'publicConfig' };
-    if (method === 'GET'  && pathname === '/auth/context')   return { name: 'authContext', requiresAuth: true };
-    if (method === 'POST' && pathname === '/admin/bootstrap') return { name: 'adminBootstrap', requiresAuth: true };
+    if (method === 'GET'  && pathname === '/health')            return { name: 'health' };
+    if (method === 'GET'  && pathname === '/public/config')     return { name: 'publicConfig' };
+    if (method === 'GET'  && pathname === '/auth/context')      return { name: 'authContext', requiresAuth: true };
+    if (method === 'POST' && pathname === '/admin/bootstrap')   return { name: 'adminBootstrap', requiresAuth: true };
+    if (method === 'GET'  && pathname === '/dashboard/summary') return { name: 'dashboardSummary', requiresAuth: true };
     return null;
 }
 
@@ -890,6 +1195,8 @@ export default {
                     return await handleAuthContext(request, env, requestId, corsHeaders);
                 case 'adminBootstrap':
                     return await handleAdminBootstrap(request, env, requestId, corsHeaders);
+                case 'dashboardSummary':
+                    return await handleDashboardSummary(request, env, requestId, corsHeaders);
                 default:
                     return errorResponse('not_found', 404, corsHeaders, requestId);
             }
