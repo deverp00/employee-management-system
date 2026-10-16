@@ -234,7 +234,7 @@ async function refreshList() {
             { key: 'employeeCode', label: 'Code', render: (r) => el('span', { class: 'text-mono', text: r.employeeCode || '—' }) },
             { key: 'name', label: 'Name', render: (r) => el('span', { text: fullName(r) }) },
             { key: 'email', label: 'Email' },
-            { key: 'status', label: 'Status', render: (r) => statusBadge(r.status) },
+            { key: 'status', label: 'Status', render: (r) => statusBadge(r.status, r.activationStatus) },
             { key: 'account', label: 'Account', render: (r) => accountBadge(r) },
             {
                 key: 'actions',
@@ -787,10 +787,26 @@ function fullName(r) {
     return `${r.firstName || ''} ${r.lastName || ''}`.trim() || '—';
 }
 
-function statusBadge(status) {
+function statusBadge(status, activation) {
     const s = String(status || '').toLowerCase();
+    const act = String(activation || 'active').toLowerCase();
     const label = titleCase(s || '—');
-    const cls = 'status' + (s === 'active' ? ' is-solid' : s === 'inactive' ? ' is-outline' : ' is-muted');
+
+    // Visual cue: an employee whose account is still pending activation
+    // is shown with a muted badge, so it does not appear as strongly
+    // "active" as an employee whose account is already live. This is a
+    // display-only distinction; the underlying employment status is
+    // unchanged.
+    let cls;
+    if (act === 'pending') {
+        cls = 'status is-muted';
+    } else if (s === 'active') {
+        cls = 'status is-solid';
+    } else if (s === 'inactive') {
+        cls = 'status is-outline';
+    } else {
+        cls = 'status is-muted';
+    }
     return el('span', { class: cls }, [ label ]);
 }
 
